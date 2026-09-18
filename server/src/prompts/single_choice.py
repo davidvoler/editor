@@ -18,7 +18,7 @@ async def get_single_choice(
     model_instance = get_provider(provider, model)
     agent = Agent(
         model_instance,
-        result_type=SingleChoiceList,
+        output_type=SingleChoiceList,
         system_prompt="You are an expert language teacher.",)
     result = await agent.run(f"Create {num_sentences} questions for the word: {word}")
-    return result.data
+    return result.output

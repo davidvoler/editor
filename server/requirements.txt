@@ -22,6 +22,7 @@ pycountry
 taskiq
 taskiq-redis
 taskiq[reload]
+pydantic-ai
 # test suite (server/tests) — run inside the server container
 pytest
 pytest-asyncio

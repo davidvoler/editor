@@ -1,0 +1,72 @@
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:17.4
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: polyglots
+      POSTGRES_PASSWORD: polyglots
+      POSTGRES_DB: polyglots
+      shared_buffers: 4GB 
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    shm_size: 4GB
+
+  server:
+    container_name: server
+    image: server:polyglots
+    build:
+      context: server
+      dockerfile: Dockerfile.dev
+    ports:
+      - 8006:8004
+    volumes:
+      - ./server/src:/app
+      # pytest suite (server/tests) — run with:
+      #   docker compose exec -w /app/tests server python -m pytest -q
+      - ./server/tests:/app/tests
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - uvicorn
+      - main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8006"
+      - --reload
+    depends_on:
+      - postgres
+
+  redis:
+    container_name: redis
+    hostname: redis
+    image: redis:7.2
+    ports:
+      - 6379:6379
+
+
+  broker:
+    container_name: broker
+    image: server:polyglots
+    command:
+      - taskiq
+      - worker
+      - tasks.broker:broker
+      # task modules to import so their @broker.task fns register on the worker
+      - routers.generate_poc_task
+      - -fsd
+      - --log-level 
+      - INFO
+      - --reload
+    volumes:
+      - ./server/src:/app
+    environment: *server-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - postgres
