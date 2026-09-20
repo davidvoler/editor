@@ -43,8 +43,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('MODULE OUTLINE'), findsOneWidget);
-    expect(find.text('Start with your first lesson'), findsOneWidget);
-    expect(find.text('Add lesson'), findsOneWidget);
+    expect(find.text('AI provider'), findsOneWidget);
+    expect(find.text('Module generation'), findsOneWidget);
+    expect(find.text('muse-glimmer'), findsOneWidget);
+    expect(
+      find.text('Describe the lessons or exercises you need...'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byType(TextField),
+      'ordering coffee in Spanish',
+    );
+    await tester.tap(find.byTooltip('Send prompt'));
+    await tester.pump();
+    expect(find.text('ordering coffee in Spanish'), findsOneWidget);
 
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
