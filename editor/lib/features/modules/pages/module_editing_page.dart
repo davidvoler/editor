@@ -23,7 +23,7 @@ class _ModuleEditingPageState extends State<ModuleEditingPage> {
     'OpenAI',
     'Gemini',
     'Anthropic',
-    'Microsoft',
+    'Copilot',
   ];
   static const models = ['muse-glimmer', 'gemma4'];
 
