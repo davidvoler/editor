@@ -117,4 +117,4 @@ class VideoPromptType(Enum):
 class PromptResponseType(Enum):
     TASK = "task" # we have to run a task as the response could take 10 - 30 seconds 
     SYNC = "sync" # answer should be returned synchronously - less than a second
-    ASYNC = "async" # answer will be returned asynchronously - 1 -5 seconds
+    ASYNC = "async" # answer will be returned asynchronously - 1 - 5 seconds

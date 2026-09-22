@@ -92,6 +92,23 @@ Pages
 - Course list page 
 - Prompt Monitor
 
+Q. Where do we show the tasks that are not yet completed 
+    a. in chat window (and we can continue to the next prompt)
+    b. in the context 
+        - if we are creating a new module - we show it in the module tab
+        - if we create exercises for words - show it in the lesson/exercises
+
+The chat window should have the following structure 
+- 2 panes 
+    - chat pane
+    - course/module pane 
+    - review pane 
+
+###### Ideas ######
+- add suggestion to a module/course 
+    - too many exercises in a lesson
+    
+
 ##### Backend #####
 A user can write anything in the chat 
 Prompt Router - what do the user wants from the chat 
