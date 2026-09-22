@@ -60,6 +60,60 @@ The AI should return options
     - generate quizzes
 
 
+
+- Utitlities
+    - save prompts request for debug
+    - handle errors 
+
+
+#### Architectural design ####
+- Easily improve prompts 
+    - extended
+    - test
+    - improve 
+- Prompts should have 
+    - params for the prompts  
+        - word
+        - free text
+    - system params oc course/module level
+        - language 
+        - to language 
+        - max number of words in sentence
+        - free text extending the system prompt
+
+
+##### UI/UX #####
+A simple chat window with not need to have create course/create module button 
+We are always in a context of a course/module whoever we change from button interface to chat interface
+
+Pages 
+- Chat page - When we are in course context we see the course/module in a tab 
+    - the good elements about using chat to create the course are 
+        - it is impressive - fully modern AI design
+        - it is great for setting specific course related parameters
+- course list page 
+
+##### Backend #####
+A user can write anything in the chat 
+Prompt Router - what do the user wants from the chat 
+
+                                       _________________
+                                       | Prompt Router |
+                                       -----------------
+                                              |
+     _________________    _______________   _______________    ________________
+    | Exercise Router |  | Module Router |  | Lesson Router | | Course Router  |
+     -----------------    ---------------   ---------------    ----------------                          
+
+     _________________    _______________   _______________    ________________
+    | Choice Exercise  |  |Explanation |   | Identify.    |   |Course Router  |
+     -----------------    ---------------   ---------------    ----------------   
+
+
+How to figure out what did the user mean? 
+- simply by 
+
+
 ### Gemini suggestion for Implementing Multi stage course creation  
 1. Architectural Strategy: The Agentic State Machine
 To move to a free-text process without breaking your data flow, treat the chat interface as a stateful conversation where the AI acts as a Course Designer Assistant.
