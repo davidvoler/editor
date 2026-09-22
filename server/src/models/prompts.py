@@ -1,5 +1,3 @@
-from unittest import case
-
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -36,13 +34,8 @@ class Word(BaseModel):
     
 
     
-class PromptType(Enum):
-    CREATE_COURSE = "create_course"
-    CREATE_MODULE = "create_module"
-    CREATE_LESSON = "create_lesson"
-    VOCABULARY = "vocabulary"
-    EXERCISE = "exercise"
-    
+
+
 
 class PromptContext(BaseModel):
     course_options: CourseOption|None = Field(..., description="The course context for the prompt.")
@@ -55,7 +48,7 @@ class PromptContext(BaseModel):
 class PromptOption(BaseModel):
     option_text: str = Field(..., description="The text of the option.")
     option_value: str = Field(..., description="The value associated with the option.")
-    prompt_type: PromptType = Field(..., description="The type of prompt this option is associated with.")
+    prompt_type: PromptRouterType = Field(..., description="The type of prompt this option is associated with.")
     
 
 
@@ -67,50 +60,61 @@ class PromptRequest(BaseModel):
 
 
 
-async def identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
-    # Implement the logic to identify the prompt type based on the user message and context
-    pass
-
-
-async def process_prompt_request(prompt_request: PromptRequest, prompt_type: PromptType) -> None:
-    # Implement the logic to process the prompt request based on the identified prompt type
-    match(prompt_type):
-        case PromptType.CREATE_COURSE:
-            # Handle create course logic
-            pass
-        case PromptType.CREATE_MODULE:
-            # Handle create module logic
-            pass
-        case PromptType.CREATE_LESSON:
-            # Handle create lesson logic
-            pass
-        case PromptType.VOCABULARY:
-            # Handle vocabulary logic
-            pass
-        case PromptType.EXERCISE:
-            # Handle exercise logic
-            pass
-        case _:
-            # Handle unknown prompt type
-            pass
+class PromptResponse(BaseModel):
+    response_type: PromptResponseType = Field(..., description="The type of response expected for the prompt. ")
+    prompt_request: PromptRequest = Field(..., description="The original prompt request associated with this response.")
+    option: list[PromptOption]|None = Field(..., description="The option associated with this response, if applicable.")
+    task_id: str|None = Field(..., description="The ID of the task associated with this response, if applicable.")
+    results: any|None = Field(..., description="The results associated with this response, if applicable.")
+    results_type: str|None = Field(..., description="The type of the results associated with this response, if applicable.")
+    ui_chat_response: any|None = Field(..., description="The UI chat response associated with this response, if applicable.")
+    prompt_router_type: PromptRouterType|None = Field(..., description="The type of prompt router associated with this response, if applicable.")
+    prompt_sub_route: str|None = Field(..., description="The sub-route of the prompt associated with this response, if applicable.")
+    prompt_action_type: PromptActionType|None = Field(..., description="The type of action associated with this response, if applicable.")
+    
 
 
 
-async def offer_options(prompt_request: PromptRequest) -> list[PromptOption]:
-    # Implement the logic to offer options to the user based on the prompt request
-    pass
+class PromptRouterType(Enum):
+    COURSE = "create_course"
+    MODULE = "create_module"
+    LESSON = "create_lesson"
+    VOCABULARY = "vocabulary"
+    EXERCISE = "exercise"
+    VIDEO = "video"
+
+class PromptActionType(Enum):
+    OPTIONS = "options"
+    ASK_AI = "ask_ai"
+    CACHE = "cache"
+    SIMPLE_ACTION = "simple_action" # like create elements 
+    ATTRIBUTES = "attributes"
 
 
-async def handle_prompt_request(prompt_request: PromptRequest) -> None:
-    prompt_type = await identify_prompt_type(prompt_request)
-    # Implement the logic to handle the prompt request based on the identified prompt type
-    prompt_type = await identify_prompt_type(prompt_request)
-    if not prompt_type:
+class ExercisePromptType(Enum):
+    MULTIPLE_CHOICE = "multiple_choice"
+    FILL_IN_THE_BLANK = "fill_in_the_blank"
+    TRUE_FALSE = "true_false"
+    SINGLE_CHOICE = "single_choice"
+    EXPLANATION = "explanation"
 
+class LessonPromptType(Enum):
+    CREATE_LESSON = "create_lesson"
 
+class CoursePromptType(Enum):
+    CREATE_COURSE = "create_course"
+    COURSE_ATTRIBUTES = "course_attribute"
 
+class ModulePromptType(Enum):
+    CREATE_MODULE = "create_module"
+    MODULE_ATTRIBUTES = "module_attribute"
+    SUGGEST_WORDS = "suggest_words"
 
+class VideoPromptType(Enum):
+    SECTIONS = "sections"
+    PARTS = "parts"
 
-
-
-
+class PromptResponseType(Enum):
+    TASK = "task" # we have to run a task as the response could take 10 - 30 seconds 
+    SYNC = "sync" # answer should be returned synchronously - less than a second
+    ASYNC = "async" # answer will be returned asynchronously - 1 -5 seconds
