@@ -101,9 +101,9 @@ Prompt Router - what do the user wants from the chat
                                        | Prompt Router |
                                        -----------------
                                               |
-     _________________    _______________   _______________    ________________
-    | Exercise Router |  | Module Router |  | Lesson Router | | Course Router  |
-     -----------------    ---------------   ---------------    ----------------                          
+     _________________    _______________   _______________    ________________    ________________
+    | Exercise Router |  | Module Router |  | Lesson Router | | Course Router  |  | Video Router  |  
+     -----------------    ---------------   ---------------    ----------------    ----------------                        
 
      _________________    _______________   _______________    ________________
     | Choice Exercise  |  |Explanation |   | Identify.    |   |Course Router  |
@@ -111,8 +111,20 @@ Prompt Router - what do the user wants from the chat
 
 
 How to figure out what did the user mean? 
-- simply by 
+- keywords
+- let AI decide
+- Show options 
 
+Context
+- Course context
+- Module context
+- Options selected context with original prompt
+
+Logging 
+It would be great to save the prompt data into a database
+- review the process
+- get context for next time with start - go exactly where you left
+- improve prompts 
 
 ### Gemini suggestion for Implementing Multi stage course creation  
 1. Architectural Strategy: The Agentic State Machine
