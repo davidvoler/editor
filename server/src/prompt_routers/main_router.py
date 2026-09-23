@@ -1,4 +1,4 @@
-from models.prompts import (
+from models.prompts_old import (
     PromptRequest,
     PromptRouterType,
     PromptOption,

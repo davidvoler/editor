@@ -11,7 +11,7 @@ async def identify_lesson_type(prompt_request: PromptRequest) -> LessonType:
     # Implement the logic to identify the lesson type based on the prompt request
     return LessonType.SINGLE_CHOICE
 
-from models.prompts import (
+from models.prompts_old import (
     PromptRequest,
     PromptOption,
     PromptContext,

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from server.src.models.prompts import PromptRequest, PromptResponse, PromptResponseType, PromptRouterType, PromptActionType, PromptResultsType
+from models.prompts_old import PromptRequest, PromptResponse, PromptResponseType, PromptRouterType, PromptActionType, PromptResultsType
 
 router = APIRouter()
 

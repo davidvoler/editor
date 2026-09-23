@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from server.src.models.prompts import PromptContext
+from models.prompts_old import PromptContext
 from models.context import ContextRequest
 router = APIRouter()
 

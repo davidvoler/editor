@@ -4,6 +4,18 @@ from datetime import datetime
 from pydantic import BaseModel, field_validator
 
 
+class CourseOption(BaseModel):
+    extra_system_prompt: str|None = Field(..., description="Additional system prompt for all request related to the course.")
+    target_language: str|None = Field(..., description="The target language for the course.")
+    student_language: str|None = Field(..., description="The language spoken by the student.")
+    level: str|None = Field(..., description="The level of the course.")
+    target_audience: str|None = Field(..., description="The target audience for the course.")
+    target_age_group: str|None = Field(..., description="The target age group for the course.")
+    teaching_method: str|None = Field(..., description="The teaching method used for the course.")
+    learning_objectives: str|None = Field(..., description="The learning objectives for the course.")
+
+
+
 class Course(BaseModel):
     course_id: int | None = None
     school: str | None = None
@@ -15,18 +27,6 @@ class Course(BaseModel):
     description: str | None = None
     deleted: bool | None = False
     status: str | None = 'draft'  # draft, reviewed, published, archived
-    course_options: dict | None = None
+    course_options: dict|CourseOption|None = {}
 
-    # course_options is jsonb and, like other jsonb columns in this schema,
-    # can come back as a real object, a double-encoded JSON string, or null.
-    @field_validator("course_options", mode="before")
-    @classmethod
-    def _coerce_course_options(cls, v):
-        if v is None:
-            return None
-        if isinstance(v, str):
-            try:
-                v = json.loads(v)
-            except (ValueError, TypeError):
-                return None
-        return v if isinstance(v, dict) else None
+

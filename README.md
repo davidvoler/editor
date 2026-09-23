@@ -213,6 +213,11 @@ Q. How should we show the debug options
 a. in the same chat window when debug options is selected
 b. in a separated window
 
+Q. Do we need a context - or are we saving the entire data in the module/course
+a. we could have a prompt history - and get the last prompt 
+b. we can save as much data as we can in the course/module
+c. consider consulting AI
+
 ##### Example Discussion ####
 
 p: create a French course

@@ -107,5 +107,35 @@ create table course.subtitles(
 );
 
 
+drop table if exists course.prompt_request;
+create table course.prompt_request (
+    prompt_request_id serial primary key,
+    course_id int,
+    module_id int,
+    lesson_id int,
+    user_message text,
+    provider varchar(200),
+    model varchar(200),
+    options jsonb,
+    last_router_type varchar(100),
+    last_action_type varchar(100)
+);
+drop table if exists course.prompt_response;
+create table course.prompt_response (
+    prompt_response_id serial primary key,
+    prompt_request_id int,
+    course_id int,
+    module_id int,
+    lesson_id int,
+    options jsonb,
+    results jsonb,
+    results_type varchar(100),
+    ui_chat_response varchar(500),
+    prompt_router_type varchar(100),
+    prompt_type varchar(100),
+    prompt_action_type varchar(100),
+);
+
+
 
 
