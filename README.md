@@ -149,13 +149,16 @@ It would be great to save the prompt data into a database
     - Prompt Text
     - Context
 [Server]
-- Identify type of prompt
+- Identify type of prompt - what does the user want?
 - returns Prompt Response
     - task id if a long running task - we will poll on completed tasks and mark them as done, running, failed
     - results if the prompt can be answered without waiting
     - options - if we are not sure what the user wanted - if the current context 
     - description to display prompt window
     - result type 
+- Returns option for user to select from
+
+
 [Client]
     Result type?
         - new course 
@@ -171,8 +174,16 @@ It would be great to save the prompt data into a database
             - offer the normal chat to suggest something else
 
 
-
-
+- Prompt procedure 
+    - Understand what the user wants 
+        - if not show options for the user to select 
+    - Extract the data from the prompt 
+        - if we are not sure - or some data is missing 
+            - offer the user what we understand - so he can correct it
+            - offer her to complete the missing data
+    - Take the action
+        - return the results of the action
+        - when action is a long running task return task id
 
 endpoint
 POST /prompt
