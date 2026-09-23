@@ -201,16 +201,32 @@ GET /context (course_id, module_id) - last saved context
 GET /module_full - context, module, module element
 GET /tasks/status
 
-
-
 Questions:
 Q. when can the user send the next prompt?
     1. when last prompts has a response - async 
     2. when pending tasks are completed - sync - do not run a new task before older tasks are completed
 
+Q. Can we really simplify the data we pass from prompts and back 
+- looks like we have too many classes and types, can we group the together?  
 
+Q. How should we show the debug options 
+a. in the same chat window when debug options is selected
+b. in a separated window
 
+##### Example Discussion ####
 
+p: create a French course
+s: would you like to create a new course 
+    d: lang: [French]
+    d: to_lang [] - What language do your student speak
+    d: level [b1] - what is the course level
+    advanced options
+        audience: []
+        age group [] 
+p: (filling the missing data)
+s: creating the course and the course is presented on the course pane 
+    Would you like to create the first module for the course 
+p: yes,  please create a module with some greeting words    
 
 
 
