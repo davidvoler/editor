@@ -14,10 +14,8 @@ class Course(BaseModel):
     title: str | None = None
     description: str | None = None
     deleted: bool | None = False
-    status: str | None = None  # draft, reviewed, published, archived
+    status: str | None = 'draft'  # draft, reviewed, published, archived
     course_options: dict | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
     # course_options is jsonb and, like other jsonb columns in this schema,
     # can come back as a real object, a double-encoded JSON string, or null.

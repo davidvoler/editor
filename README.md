@@ -26,7 +26,6 @@ I want the ui for creating a course or a module look more like claude code or an
 The AI should return options 
 - suggests words for model - say you have 3 lists and you choose one of them, or create your own list
 - suggest explanations for each lesson
-    - S
 
 ### Prompt router - self planned 
 
@@ -156,11 +155,41 @@ It would be great to save the prompt data into a database
     - results if the prompt can be answered without waiting
     - options - if we are not sure what the user wanted - if the current context 
     - description to display prompt window
+    - result type 
+[Client]
+    Result type?
+        - new course 
+            - create the course elements in the course pane 
+        - new module 
+            - Create the module in the module pane
+        - Task ID 
+            - show progress spinner
+            - poll for task results 
+            - reload module when task completes
+        - Options 
+            - show the options in a clickable manner
+            - offer the normal chat to suggest something else
+
+
+
 
 
 endpoint
 POST /prompt
-GET /prompt/status [list of task ids]
+GET /prompt/status  - list of task ids for the current module/course
+GET /course/prompt_context - where we have left last time in the course
+GET /module/prompt_context 
+GET /course
+GET /module_full includes all lesson and exercises 
+
+
+simplified version 
+
+GET /course -  course data
+GET /context (course_id, module_id) - last saved context 
+GET /module_full - context, module, module element
+GET /tasks/status
+
 
 
 Questions:

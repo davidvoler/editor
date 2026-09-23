@@ -60,6 +60,8 @@ class PromptRequest(BaseModel):
 
 
 
+
+
 class PromptResponse(BaseModel):
     response_type: PromptResponseType = Field(..., description="The type of response expected for the prompt. ")
     prompt_request: PromptRequest = Field(..., description="The original prompt request associated with this response.")
@@ -73,6 +75,12 @@ class PromptResponse(BaseModel):
     prompt_action_type: PromptActionType|None = Field(..., description="The type of action associated with this response, if applicable.")
     
 
+class PromptResultsType(Enum):
+    OPTION = "option" # show the options 
+    NEW_COURSE = "new_course"
+    NEW_MODULE = "new_module"
+    TASK_ID = "task_id" # show spinner and reload current module when spinner completes
+    
 
 
 class PromptRouterType(Enum):
