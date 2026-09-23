@@ -118,11 +118,13 @@ create table course.prompt_request (
     model varchar(200),
     options jsonb,
     last_router_type varchar(100),
-    last_action_type varchar(100)
+    last_action_type varchar(100),
+    created_at timestamp default now()
 );
 drop table if exists course.prompt_response;
 create table course.prompt_response (
     prompt_response_id serial primary key,
+    request_user_message varchar(500),
     prompt_request_id int,
     course_id int,
     module_id int,
@@ -134,6 +136,7 @@ create table course.prompt_response (
     prompt_router_type varchar(100),
     prompt_type varchar(100),
     prompt_action_type varchar(100),
+    created_at timestamp default now()
 );
 
 

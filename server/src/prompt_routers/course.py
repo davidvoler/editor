@@ -1,29 +1,27 @@
 from models.prompts_old import (
     PromptRequest,
     PromptOption,
-    PromptContext,
-    PromptActionType,
     CoursePromptType,
-    PromptResponseType,
     PromptResponse,
     PromptOptionData,
+    PromptType
 )
 from utils.prompt_utils import save_prompt_request
 from utils.course_utils import create_course
 from models.course import Course
 
 
-async def _identify_prompt_type(prompt_request: PromptRequest) -> CoursePromptType:
+async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     if "create course" in prompt_request.message.lower():
-        return CoursePromptType.CREATE_COURSE
+        return PromptType.CREATE_COURSE
     if "create" in prompt_request.message.lower() and "course"  in prompt_request.message.lower():
-        return CoursePromptType.CREATE_COURSE
+        return PromptType.CREATE_COURSE
     if "attributes" in prompt_request.message.lower():
-        return CoursePromptType.COURSE_ATTRIBUTES
+        return PromptType.COURSE_ATTRIBUTES
     return None
 
 
-def create_options(prompt_request: PromptRequest) -> list[PromptOption]:
+def _create_options(prompt_request: PromptRequest) -> list[PromptOption]:
     options = [
         PromptOption(
             label="Create a new Course",
@@ -44,12 +42,13 @@ def create_options(prompt_request: PromptRequest) -> list[PromptOption]:
             ]
         )
     ]
+    return options
 
-async def _process_prompt_request(prompt_request: PromptRequest, course_type: CoursePromptType) -> PromptResponse:
+async def _process_prompt_request(prompt_request: PromptRequest, course_type: PromptType) -> PromptResponse:
     # Implement the logic to process the prompt request based on the identified course type
     match(course_type):
-        case CoursePromptType.CREATE_COURSE:
-            save_prompt_request(prompt_request, PromptActionType.SIMPLE_ACTION)
+        case PromptType.CREATE_COURSE:
+            save_prompt_request(prompt_request)
             course = Course(
                 lang="en",  # Replace with actual value from prompt_request
                 to_lang="fr",  # Replace with actual value from prompt_request
@@ -61,7 +60,7 @@ async def _process_prompt_request(prompt_request: PromptRequest, course_type: Co
                 status="draft"  # Replace with actual value from prompt_request
             )
             return await create_course(course)
-        case CoursePromptType.COURSE_ATTRIBUTES:
+        case PromptType.COURSE_ATTRIBUTES:
             # Handle course attributes logic
             pass
         case _:
@@ -70,7 +69,11 @@ async def _process_prompt_request(prompt_request: PromptRequest, course_type: Co
 
 async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
     # Implement the logic to offer options to the user based on the prompt request
-    pass
+    options = _create_options(prompt_request)
+    return PromptResponse(
+        message="Please choose an option:",
+        options=options
+    )
 
 
 async def handle_prompt_course_request(prompt_request: PromptRequest) -> PromptResponse:

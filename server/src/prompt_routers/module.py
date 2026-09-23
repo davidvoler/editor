@@ -1,36 +1,38 @@
 from models.prompts_old import (
     PromptRequest,
-    PromptOption,
-    PromptContext,
-    PromptActionType,
-    ModulePromptType,
     PromptResponse,
+
 )   
 
 
 
+from models.prompts_simplified import PromptType
 from utils.prompt_utils import save_prompt_request
-async def _identify_prompt_type(prompt_request: PromptRequest) -> ModulePromptType:
+async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     # Implement the logic to identify the prompt type based on the user message and context
     pass
 
+async def suggest_options(prompt_request: PromptRequest) -> PromptResponse:
+    # Implement the logic to suggest options to the user based on the prompt request
+    pass
 
-async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: ModulePromptType) -> PromptResponse:
+
+async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: PromptType) -> PromptResponse:
     # Implement the logic to process the prompt request based on the identified prompt type
     match(prompt_type):
-        case ModulePromptType.CREATE_MODULE:
+        case PromptType.MODULE_CREATE:
             # Handle create module logic
             pass
-        case ModulePromptType.MODULE_ATTRIBUTES:
+        case PromptType.MODULE_ATTRIBUTES:
             # Handle module attributes logic
             pass
-        case ModulePromptType.SUGGEST_WORDS:
+        case PromptType.SUGGEST_WORDS:
             # Handle suggest words logic
             pass
         case _:
             # Handle unknown prompt type
             pass
-
+    return await suggest_options(prompt_request)
 
 
 async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
