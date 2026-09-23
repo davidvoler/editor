@@ -6,6 +6,7 @@ from models.prompts import (
     CoursePromptType,
     PromptResponseType,
     PromptResponse,
+    PromptOptionData,
 )
 from utils.prompt_utils import save_prompt_request
 from utils.course_utils import create_course
@@ -25,12 +26,22 @@ async def _identify_prompt_type(prompt_request: PromptRequest) -> CoursePromptTy
 def create_options(prompt_request: PromptRequest) -> list[PromptOption]:
     options = [
         PromptOption(
-            label="Create Course",
+            label="Create a new Course",
             value="create_course"
         ),
         PromptOption(
-            label="Course Attributes",
+            label="Change course attributes",
             value="course_attributes"
+        ),
+        PromptOption(
+            label="View course details",
+            value="course_missing_data",
+            option_data=[
+                PromptOptionData(
+                    label="lang",
+                    value="en"
+                )
+            ]
         )
     ]
 

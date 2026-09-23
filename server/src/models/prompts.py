@@ -45,10 +45,16 @@ class PromptContext(BaseModel):
     module_id: int|None = Field(..., description="The ID of the module in the context.")
     lesson_id: int|None = Field(..., description="The ID of the lesson in the context.")
 
+class PromptOptionData(BaseModel):
+    label: str = Field(..., description="The label of the prompt option.")
+    value: str = Field(..., description="The value associated with the prompt option.")
+    
+
 class PromptOption(BaseModel):
     option_text: str = Field(..., description="The text of the option.")
     option_value: str = Field(..., description="The value associated with the option.")
     prompt_type: PromptRouterType = Field(..., description="The type of prompt this option is associated with.")
+    option_data: list[PromptOptionData]|None = Field(..., description="The data associated with the prompt option.")
     
 
 
