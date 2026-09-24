@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/courses/pages/courses_page.dart';
+import '../features/chat/pages/chat_page.dart';
 
 class CourseEditorApp extends StatelessWidget {
   const CourseEditorApp({super.key});
@@ -16,7 +16,7 @@ class CourseEditorApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2B7771)),
         fontFamily: 'Arial',
       ),
-      home: const CoursesPage(),
+      home: const ChatPage(),
     );
   }
 }
