@@ -119,9 +119,7 @@ class _ChatPanelState extends State<ChatPanel> {
               itemCount: messages.length + (waiting ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index == messages.length) {
-                  return const ChatBubble(
-                    message: ChatMessage(text: 'Thinking…', fromUser: false),
-                  );
+                  return const ThinkingBubble();
                 }
                 final isLatest = index == messages.length - 1;
                 return ChatBubble(
@@ -156,6 +154,43 @@ class _ChatPanelState extends State<ChatPanel> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ThinkingBubble extends StatelessWidget {
+  const ThinkingBubble({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F1EA),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF2B7771),
+              ),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Thinking…',
+              style: TextStyle(color: Color(0xFF748087), fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }

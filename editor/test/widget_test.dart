@@ -7,7 +7,15 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:editor/features/chat/data/chat_responder.dart';
 import 'package:editor/main.dart';
+
+// The spinner animates until the reply arrives, so advance past the
+// simulated latency before settling.
+Future<void> waitForReply(WidgetTester tester) async {
+  await tester.pump(ChatResponder.responseDelay);
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('starts on the chat and switches pages from the left menu', (
@@ -61,8 +69,9 @@ void main() {
     await tester.pump();
     expect(find.text('create a module'), findsOneWidget);
     expect(find.text('Thinking…'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+    await waitForReply(tester);
     expect(find.text('Thinking…'), findsNothing);
     expect(
       find.textContaining('Give it a name, or start from a topic'),
@@ -78,7 +87,7 @@ void main() {
 
     // Picking an option sends it and the reply offers the next options.
     await tester.tap(find.widgetWithText(ActionChip, 'Greetings'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+    await waitForReply(tester);
     expect(find.textContaining('"Greetings" vocabulary'), findsOneWidget);
     expect(
       find.widgetWithText(ActionChip, 'Basic list (10 words)'),
@@ -88,7 +97,7 @@ void main() {
     // An option that needs input asks for a value before it is sent.
     await tester.enterText(find.byType(TextField), 'create a module');
     await tester.tap(find.byTooltip('Send message'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+    await waitForReply(tester);
     await tester.tap(find.widgetWithText(ActionChip, 'Name the module').last);
     await tester.pumpAndSettle();
     await tester.enterText(
@@ -96,7 +105,7 @@ void main() {
       'At the café',
     );
     await tester.tap(find.byTooltip('Submit Module name'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+    await waitForReply(tester);
     expect(find.text('Name the module: At the café'), findsOneWidget);
     expect(
       find.textContaining('Module "At the café" is ready to set up'),
