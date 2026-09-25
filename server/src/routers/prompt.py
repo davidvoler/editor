@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from models.prompts_old import PromptRequest, PromptResponse, PromptResponseType, PromptRouterType, PromptActionType, PromptResultsType
-
+from models.prompts import PromptRequest
+from models.tasks import TasksResultsRequest
+from tasks.prompt_tasks import handle_prompt_task
 router = APIRouter()
 
-@router.post("/prompt", response_model=PromptResponse)
-async def handle_prompt(request: PromptRequest):
-    # Implement the logic to handle the prompt request here
-    # For now, just raise an HTTPException to indicate it's not implemented
-    raise HTTPException(status_code=501, detail="Not implemented")
+@router.post("/prompt", response_model=TasksResultsRequest)
+async def _handle_prompt_(request: PromptRequest)->TasksResultsRequest:
+   return await handle_prompt_task(request)

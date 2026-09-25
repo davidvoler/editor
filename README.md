@@ -218,6 +218,18 @@ a. we could have a prompt history - and get the last prompt
 b. we can save as much data as we can in the course/module
 c. consider consulting AI
 
+Q. Maybe it is better to always return Task ID and reload - never return data from a request   
+a. The logic is simpler 
+    - request - prompt or options 
+    - task id - a task id 
+    - get status - status should also include what has change and what need to be reloaded - stop spinner
+    - reload - reload the data 
+b. You do not have edge cases where data is returned directly - but it is partial 
+
+
+
+
+
 ##### Example Discussion ####
 
 p: create a French course
@@ -276,3 +288,48 @@ p: yes,  please create a module with some greeting words
 
 
 
+### Tasks & Taskiq
+The way we work with tasks
+I can see 2 options 
+1. The tasks itself is saving results to the db - so even if the use closed the page - the next time we open the chat window the results is there 
+2. pass full data back in the results - if not polled the results are lost
+3. do both 
+    a. save to DB by the task
+    b. pass full data in the task so we do not need to read from the DB
+
+```python
+#option 1
+@broker.task 
+async def prompt_request(req):
+    response = get_response(req)
+    response_id = save_response(response)
+    return TaskResponse(response_id=response_id)
+
+async def get_task_Status(task_id):
+    res = await broker.result_backend.get_result(task.task_id)
+    response_id = res.results.response_id
+    return load_response(response_id)
+
+
+
+#option 3 
+@broker.task 
+async def prompt_request(req):
+    response = get_response(req)
+    #do not wait for db - return the response to be fast
+    asyncio.run(save_response(response))
+    return response
+
+
+async def get_task_Status(task_id):
+    #results of type 
+    results = await broker.result_backend.get_result(task.task_id)
+    return results.results
+
+```
+We choose option 3 
+- it is faster 
+    - no need to read from DB 
+    - no need to wait even for writing to DB
+
+- It retains the data even if polling failed or page closed 

@@ -1,10 +1,8 @@
-from models.prompts_old import (
+from models.prompts import (
     PromptRequest,
     PromptRouterType,
-    PromptOption,
-    PromptContext,
-    PromptActionType,
-)   
+    PromptResponse
+) 
 
 from prompt_routers.module import handle_prompt_module_request
 
