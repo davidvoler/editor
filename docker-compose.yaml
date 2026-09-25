@@ -28,9 +28,9 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     shm_size: 4GB
 
-  server:
-    container_name: server
-    image: server:polyglots
+  editor:
+    container_name: editor
+    image: editor:polyglots
     build:
       context: server
       dockerfile: Dockerfile.dev
@@ -63,9 +63,9 @@ services:
       - 6379:6379
 
 
-  broker:
-    container_name: broker
-    image: server:polyglots
+  broker-editor:
+    container_name: broker-editor
+    image: editor:polyglots
     command:
       - taskiq
       - worker
