@@ -3,8 +3,6 @@
 This project is an editor for language course 
 I have decided replace a single server for student, school management and editor
 
-
-
 ### Editor/UI
 I am re-designing the editor UI 
 - Simpler 
@@ -333,3 +331,23 @@ We choose option 3
     - no need to wait even for writing to DB
 
 - It retains the data even if polling failed or page closed 
+
+
+### The full cycle - architecture
+
+- When page is loaded
+[Client] Request chat history
+[Server] Load chat history from DB
+[Client] Display chat history
+- When user start prompting
+[Client] send prompt
+[Server] starts a task - return Task response request
+[Client] poll for results 
+[Task] Get response  
+[Task] Save  to db
+[Task] Return results to results backend 
+[Client] Read Results
+[Client] Stop spinner
+[Client] Show results in chat window 
+[Client] Reload course/module data
+

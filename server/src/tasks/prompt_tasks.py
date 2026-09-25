@@ -10,8 +10,7 @@ async def _handle_prompt_task(
     context: Context = TaskiqDepends()):
     return await handle_prompt_request(req)
 
-
-async def handle_prompt_task( req: PromptRequest)->TasksResultsRequest:
+async def handle_prompt_task(req: PromptRequest)->TasksResultsRequest:
     task = await handle_prompt_request.kiq(req)
     return TasksResultsRequest(
         task_id=task.task_id,
