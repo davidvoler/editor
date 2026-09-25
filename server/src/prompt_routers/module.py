@@ -1,12 +1,10 @@
-from models.prompts_old import (
+from models.prompts import (
     PromptRequest,
     PromptResponse,
+    PromptType
 
 )   
 
-
-
-from models.prompts_simplified import PromptType
 from utils.prompt_utils import save_prompt_request
 async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     # Implement the logic to identify the prompt type based on the user message and context

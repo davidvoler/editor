@@ -7,5 +7,6 @@
     "python.testing.pytestArgs": [
         "server/tests"
     ],
-    "python.testing.cwd": "${workspaceFolder}/server"
+    "python.testing.cwd": "${workspaceFolder}/server",
+
 }

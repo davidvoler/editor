@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from server.src.models.course import Course
-from server.src.models.module import Module
-from server.src.models.word import Word
+from models.course import Course
+from models.module import Module
+from models.word import Word
 
 class PromptResultsType(Enum):
     OPTION = "option" # show the options 
@@ -84,9 +84,9 @@ class PromptResponse(BaseModel):
     lesson_id: int|None = Field(..., description="The ID of the lesson in the context.")
     option: list[PromptOption]|None = Field(..., description="The option associated with this response, if applicable.")
     task_id: str|None = Field(..., description="The ID of the task associated with this response, if applicable.")
-    results: any|None = Field(..., description="The results associated with this response, if applicable.")
+    results: dict|None = Field(..., description="The results associated with this response, if applicable.")
     results_type: str|None = Field(..., description="The type of the results associated with this response, if applicable.")
-    ui_chat_response: any|None = Field(..., description="The UI chat response associated with this response, if applicable.")
+    ui_chat_response: dict|None = Field(..., description="The UI chat response associated with this response, if applicable.")
     prompt_router_type: PromptRouterType|None = Field(..., description="The type of prompt router associated with this response, if applicable.")
     prompt_type: PromptType|None = Field(..., description="The type of prompt associated with this response, if applicable.")
     prompt_action_type: PromptActionType|None = Field(..., description="The type of action associated with this response, if applicable.")

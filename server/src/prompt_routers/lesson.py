@@ -1,35 +1,25 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from prompt_router.router import PromptType, PromptRequest
 from prompts.single_choice import SingleChoicePrompt
+from models.prompts import PromptRequest, PromptType, PromptResponse
 
 
 
-
-
-async def identify_lesson_type(prompt_request: PromptRequest) -> LessonType:
+async def identify_lesson_type(prompt_request: PromptRequest) -> PromptType:
     # Implement the logic to identify the lesson type based on the prompt request
-    return LessonType.SINGLE_CHOICE
+    return PromptType.LESSON_CREATE
 
-from models.prompts_old import (
-    PromptRequest,
-    PromptOption,
-    PromptContext,
-    PromptActionType,
-    LessonType,
-    PromptResponse
-)   
 
 
 
 from utils.prompt_utils import save_prompt_request
 
 
-async def _identify_prompt_type(prompt_request: PromptRequest) -> LessonType:
+async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     # Implement the logic to identify the prompt type based on the user message and context
     pass
 
-async def _process_prompt_request(prompt_request: PromptRequest, lesson_type: LessonType) -> PromptResponse:
+async def _process_prompt_request(prompt_request: PromptRequest, lesson_type: PromptType) -> PromptResponse:
     # Implement the logic to process the prompt request based on the identified lesson type
     match(lesson_type):
         case LessonType.MULTIPLE_CHOICE:

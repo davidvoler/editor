@@ -10,6 +10,7 @@ RUN apt-get update \
 WORKDIR /tmp
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-RUN mkdir /app
-WORKDIR /app
-RUN mkdir -p /content
+# Same path as on the host, so tracebacks are clickable in the VS Code terminal.
+# WORKDIR creates the directory.
+WORKDIR /Users/davidle/dev/tutorial/editor/server/src
+# RUN mkdir -p /content

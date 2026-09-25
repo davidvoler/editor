@@ -11,7 +11,7 @@ async def identify_video_type(prompt_request: PromptRequest) -> VideoType:
     # Implement the logic to identify the video type based on the prompt request
     return VideoType.SINGLE_CHOICE
 
-from models.prompts_old import (
+from models.prompts import (
     PromptRequest,
     PromptOption,
     PromptResponse,

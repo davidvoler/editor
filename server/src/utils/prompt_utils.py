@@ -1,6 +1,6 @@
 import json
 from utils.db import run_query, get_query_results
-from models.prompts_old import (
+from models.prompts import (
     PromptRequest,
     PromptResponse,
 )

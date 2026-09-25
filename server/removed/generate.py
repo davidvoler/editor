@@ -1,7 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from tasks.generate_quiz import generate_quiz_with_ai
-from tasks.generate_words import generate_words_with_ai
-from models.generate import GenerateLessonRequest, GenerateQuizRequest, GenerateWordsRequest
+from server.removed.generate import GenerateLessonRequest, GenerateQuizRequest, GenerateWordsRequest
 from models.tasks import TaskStatus
 from utils.db import  get_query_results
 from utils.permission import has_course_permission

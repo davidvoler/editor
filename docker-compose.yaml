@@ -1,4 +1,18 @@
-
+x-server-env: &server-env
+  - POSTGRES_DB=polyglots
+  - POSTGRES_PORT=5432
+  - POSTGRES_HOST=postgres
+  - POSTGRES_USER=polyglots
+  - POSTGRES_PASSWORD=polyglots
+  - POSTGRES_CONTENT_PASSWORD=polyglots
+  - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+  - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+  - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+  - ENABLE_DOCS=true
+  - COOKIE_SECURE=false
+  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  - REDIS_HOST=redis
+  - REDIS_PORT=6379
 services:
   postgres:
     container_name: postgres
@@ -21,12 +35,12 @@ services:
       context: server
       dockerfile: Dockerfile.dev
     ports:
-      - 8006:8004
+      - 8006:8006
     volumes:
-      - ./server/src:/app
+      # Mounted at the host path so tracebacks point at real local files.
       # pytest suite (server/tests) — run with:
-      #   docker compose exec -w /app/tests server python -m pytest -q
-      - ./server/tests:/app/tests
+      #   docker compose exec -w /Users/davidle/dev/tutorial/editor/server server python -m pytest -q
+      - ./server:/Users/davidle/dev/tutorial/editor/server
     environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -57,13 +71,13 @@ services:
       - worker
       - tasks.broker:broker
       # task modules to import so their @broker.task fns register on the worker
-      - routers.generate_poc_task
+      - tasks.prompt_tasks
       - -fsd
       - --log-level 
       - INFO
       - --reload
     volumes:
-      - ./server/src:/app
+      - ./server:/Users/davidle/dev/tutorial/editor/server
     environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"
