@@ -2,7 +2,7 @@
 
 
 ## New Chat framework
-- Get the framework to work client and server
+- [v]  Get the framework to work client and server 
 - History of chat should work
 - The debug should be readable and can be used
 - Some easy testing
@@ -13,8 +13,6 @@
 ## Editing & Adding exercises
 - Edit Exercise 
 - Add by exercise type 
-
-
 ### Question on how to proceed 
 
 Q. Try to let the Claude do the new code on his own - while getting the old code
