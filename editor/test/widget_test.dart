@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:editor/features/chat/data/chat_responder.dart';
@@ -25,7 +26,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const CourseEditorApp());
+    await tester.pumpWidget(const ProviderScope(child: CourseEditorApp()));
 
     expect(find.text('Course assistant'), findsOneWidget);
     expect(find.text('Everyday Spanish'), findsNWidgets(2));
@@ -45,7 +46,7 @@ void main() {
   ) async {
     tester.view.physicalSize = const Size(1440, 1000);
     tester.view.devicePixelRatio = 1;
-    await tester.pumpWidget(const CourseEditorApp());
+    await tester.pumpWidget(const ProviderScope(child: CourseEditorApp()));
 
     await tester.tap(find.text('Courses'));
     await tester.pumpAndSettle();
