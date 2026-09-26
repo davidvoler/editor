@@ -69,7 +69,7 @@ services:
     command:
       - taskiq
       - worker
-      - tasks.broker:broker
+      - task_runner:broker
       # task modules to import so their @broker.task fns register on the worker
       - tasks.prompt_tasks
       - -fsd

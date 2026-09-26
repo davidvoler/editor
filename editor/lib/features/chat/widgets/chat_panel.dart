@@ -8,7 +8,7 @@ import 'debug_dialog.dart';
 class ChatPanel extends StatefulWidget {
   const ChatPanel({required this.responder, super.key});
 
-  final ChatResponder responder;
+  final Responder responder;
 
   @override
   State<ChatPanel> createState() => _ChatPanelState();
@@ -49,6 +49,10 @@ class _ChatPanelState extends State<ChatPanel> {
   }) async {
     final prompt = text.trim();
     if (prompt.isEmpty || waiting) return;
+    final lastReply = messages.lastWhere(
+      (message) => !message.fromUser,
+      orElse: () => const ChatMessage(text: '', fromUser: false),
+    );
     setState(() {
       messages.add(ChatMessage(text: prompt, fromUser: true));
       waiting = true;
@@ -60,6 +64,7 @@ class _ChatPanelState extends State<ChatPanel> {
       prompt,
       option: option,
       input: input,
+      lastReply: lastReply,
     );
     if (!mounted) return;
     setState(() {

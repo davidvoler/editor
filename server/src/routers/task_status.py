@@ -6,24 +6,26 @@ from task_runner import broker
 router = APIRouter()
 
 
-async def check_task_status(task: TasksResultsRequest) -> bool:
+async def check_task_status(task: TasksResultsRequest) -> TaskResults:
     is_ready: bool = await broker.result_backend.is_result_ready(task.task_id)
     if is_ready:
-        result: TaskiqResult[TaskResults] = (
-            await broker.result_backend.get_result(task.task_id)
+        result: TaskiqResult = await broker.result_backend.get_result(task.task_id)
+        return TaskResults(
+            task_id=task.task_id,
+            poll_count=task.poll_count,
+            execution_time=result.execution_time,
+            ready=True,
+            success=not result.is_err,
+            errors=str(result.error) if result.is_err else None,
+            prompt_response=result.return_value,
         )
-        result.result.task_id = task.task_id
-        result.result.ready = True
-        result.result.poll_count = task.poll_count
-        result.result.execution_time = result.execution_time
-        return result.result
     else:
         return TaskResults(task_id=task.task_id, 
                            poll_count=task.poll_count,
                            ready=False)
     
 
-@router.get("/tasks_results")
+@router.post("/tasks_results")
 async def get_task_status(req: list[TasksResultsRequest]) -> list[TaskResults]:
     task_statuses: list[TaskResults] = []
     for task in req:

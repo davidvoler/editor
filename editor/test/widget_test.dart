@@ -9,7 +9,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:editor/features/chat/data/chat_responder.dart';
+import 'package:editor/features/chat/data/prompt_router_responder.dart';
+import 'package:editor/features/courses/data/course.dart';
+import 'package:editor/features/courses/data/courses_repository.dart';
 import 'package:editor/main.dart';
+
+// Serve the sample courses and canned replies instead of calling the server.
+Widget buildApp() => ProviderScope(
+  overrides: [
+    coursesProvider.overrideWith((ref) async => sampleCourses),
+    responderFactoryProvider.overrideWithValue(
+      (course) => ChatResponder(course: course),
+    ),
+  ],
+  child: const CourseEditorApp(),
+);
 
 // The spinner animates until the reply arrives, so advance past the
 // simulated latency before settling.
@@ -26,7 +40,8 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const ProviderScope(child: CourseEditorApp()));
+    await tester.pumpWidget(buildApp());
+    await tester.pumpAndSettle();
 
     expect(find.text('Course assistant'), findsOneWidget);
     expect(find.text('Everyday Spanish'), findsNWidgets(2));
@@ -46,7 +61,7 @@ void main() {
   ) async {
     tester.view.physicalSize = const Size(1440, 1000);
     tester.view.devicePixelRatio = 1;
-    await tester.pumpWidget(const ProviderScope(child: CourseEditorApp()));
+    await tester.pumpWidget(buildApp());
 
     await tester.tap(find.text('Courses'));
     await tester.pumpAndSettle();

@@ -11,9 +11,8 @@ async def _handle_prompt_task(
     return await handle_prompt_request(req)
 
 async def handle_prompt_task(req: PromptRequest)->TasksResultsRequest:
-    task = await handle_prompt_request.kiq(req)
+    task = await _handle_prompt_task.kiq(req)
     return TasksResultsRequest(
         task_id=task.task_id,
-        poll_count=task.poll_count,
         start_time=time.time()
     )

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/navigation_rail_panel.dart';
-import '../../chat/data/chat_responder.dart';
+import '../../chat/data/prompt_router_responder.dart';
 import '../../chat/widgets/chat_panel.dart';
 import '../../modules/pages/module_editing_page.dart';
 import '../data/course.dart';
 
-class CourseAuthoringPage extends StatelessWidget {
+class CourseAuthoringPage extends ConsumerWidget {
   const CourseAuthoringPage({required this.course, super.key});
 
   final Course course;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: Row(
         children: [
@@ -26,7 +27,9 @@ class CourseAuthoringPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: ChatPanel(
-                          responder: ChatResponder(course: course),
+                          responder: ref.watch(responderFactoryProvider)(
+                            course,
+                          ),
                         ),
                       ),
                       const VerticalDivider(width: 1, color: Color(0xFFE4E0D9)),
