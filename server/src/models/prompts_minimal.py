@@ -61,17 +61,22 @@ class PromptOption(BaseModel):
     
 
 class PromptRequest(BaseModel):
-    words_list: list[Word]|None = Field(default=[], description="The list of words in the context.")
+    #words_list: list[Word]|None = Field(default=[], description="The list of words in the context.")
     course_id: int|None = Field(0, description="The ID of the course in the context.")
     module_id: int|None = Field(0, description="The ID of the module in the context.")
     lesson_id: int|None = Field(0, description="The ID of the lesson in the context.")
     user_message: str = Field('', description="The message input from the user.") 
+    # get if from config on the module/course - user can change it on the fly
     provider: str = Field('ollama', description="The AI provider associated with the prompt request.")
     model: str = Field('gemma4', description="The model to use for the prompt request.")
-    options: list[PromptOption]|None = Field([], description="The list of options associated with the prompt request.")
+    # no need for options in the request
+    #options: list[PromptOption]|None = Field([], description="The list of options associated with the prompt request.")
+    # when it is an option - we can pre set this values
     router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
-    last_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
+    action_type: PromptActionType|None = Field(None, description="The type of action associated with the last prompt request.")
+    # when is this applicable?
     last_action_type: PromptActionType|None = Field(None, description="The type of action associated with the last prompt request.")
+    last_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
 
     def unused_words(self) -> int:
         return len([word for word in self.words_list if not word.used])
