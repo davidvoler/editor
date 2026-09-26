@@ -1,10 +1,10 @@
 from models.prompts import (
     PromptRequest,
     PromptOption,
-    CoursePromptType,
     PromptResponse,
     PromptOptionData,
-    PromptType
+    PromptType,
+    PromptRouterType,
 )
 from utils.prompt_utils import save_prompt_request
 from utils.course_utils import create_course
@@ -77,12 +77,29 @@ async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
 
 
 async def handle_prompt_course_request(prompt_request: PromptRequest) -> PromptResponse:
-    course_type = await _identify_prompt_type(prompt_request)
+    # TODO: _identify_prompt_type is out of date with the models; re-enable once fixed
+    # course_type = await _identify_prompt_type(prompt_request)
     # Implement the logic to handle the prompt request based on the identified prompt type
-    if not course_type:
-        return await _offer_options(prompt_request)
-    else:
-        return await _process_prompt_request(prompt_request, course_type)
+    return PromptResponse(
+        prompt_request=prompt_request,
+        course=prompt_request.course,
+        module=None,
+        course_id=prompt_request.course_id,
+        module_id=None,
+        lesson_id=None,
+        option=None,
+        task_id=None,
+        results=None,
+        results_type=None,
+        ui_chat_response={"message": "creating a course"},
+        prompt_router_type=PromptRouterType.COURSE,
+        prompt_type=PromptType.COURSE_CREATE,
+        prompt_action_type=None,
+    )
+    # if not course_type:
+    #     return await _offer_options(prompt_request)
+    # else:
+    #     return await _process_prompt_request(prompt_request, course_type)
 
 
 

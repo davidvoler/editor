@@ -4,11 +4,13 @@ from models.prompts import (
     PromptResponse
 ) 
 
+from prompt_routers.course import handle_prompt_course_request
 from prompt_routers.module import handle_prompt_module_request
 
 async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptRouterType:
     # Implement the logic to identify the prompt type based on the user message and context
-    pass
+    # TODO: temporary hardcode to test the task pipeline end-to-end
+    return PromptRouterType.COURSE
 
 
 async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: PromptRouterType) -> PromptResponse:
@@ -16,7 +18,7 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
     match(prompt_type):
         case PromptRouterType.COURSE:
             # Handle create course logic
-            pass
+            return await handle_prompt_course_request(prompt_request)
         case PromptRouterType.MODULE:
             # Handle create module logic
             return await handle_prompt_module_request(prompt_request)

@@ -10,6 +10,7 @@ async def check_task_status(task: TasksResultsRequest) -> TaskResults:
     is_ready: bool = await broker.result_backend.is_result_ready(task.task_id)
     if is_ready:
         result: TaskiqResult = await broker.result_backend.get_result(task.task_id)
+        print(result)
         return TaskResults(
             task_id=task.task_id,
             poll_count=task.poll_count,
