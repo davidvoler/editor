@@ -6,6 +6,10 @@ from models.prompts import (
 
 from prompt_routers.course import handle_prompt_course_request
 from prompt_routers.module import handle_prompt_module_request
+from prompt_routers.lesson import handle_prompt_lesson_request
+from prompt_routers.exercise import handle_prompt_exercise_request
+from prompt_routers.vocabulary import handle_prompt_vocabulary_request
+
 
 async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptRouterType:
     # Implement the logic to identify the prompt type based on the user message and context
@@ -24,16 +28,16 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
             return await handle_prompt_module_request(prompt_request)
         case PromptRouterType.LESSON:
             # Handle create lesson logic
-            pass
+            return await handle_prompt_lesson_request(prompt_request)
         case PromptRouterType.VOCABULARY:
             # Handle vocabulary logic
-            pass
+            return await handle_prompt_vocabulary_request(prompt_request)
         case PromptRouterType.EXERCISE:
             # Handle exercise logic
-            pass
+            return await handle_prompt_exercise_request(prompt_request)
         case _:
             # Handle unknown prompt type
-            pass
+            raise ValueError(f"Unknown prompt type: {prompt_type}")
 
 
 
@@ -43,14 +47,12 @@ async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
 
 
 async def handle_prompt_request(prompt_request: PromptRequest) -> PromptResponse:
-    prompt_type = await _identify_prompt_type(prompt_request)
-    # Implement the logic to handle the prompt request based on the identified prompt type
-    if not prompt_type:
-        return await _offer_options(prompt_request)
-    else:
-        return await _process_prompt_request(prompt_request, prompt_type)
-
-
+    prompt_router_type = await _identify_prompt_type(prompt_request)
+    if prompt_router_type:
+        response = await _process_prompt_request(prompt_request, prompt_router_type)
+        if response:
+            return response
+    return await _offer_options(prompt_request)
 
 
 

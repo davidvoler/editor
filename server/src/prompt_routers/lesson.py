@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from prompts.single_choice import SingleChoicePrompt
+from prompts.single_choice import get_single_choice
 from models.prompts import PromptRequest, PromptType, PromptResponse
 
 
@@ -22,19 +22,19 @@ async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
 async def _process_prompt_request(prompt_request: PromptRequest, lesson_type: PromptType) -> PromptResponse:
     # Implement the logic to process the prompt request based on the identified lesson type
     match(lesson_type):
-        case LessonType.MULTIPLE_CHOICE:
+        case PromptType.MULTIPLE_CHOICE:
             # Handle multiple choice lesson logic
             pass
-        case LessonType.FILL_IN_THE_BLANK:
+        case PromptType.FILL_IN_THE_BLANK:
             # Handle fill in the blank lesson logic
             pass
-        case LessonType.TRUE_FALSE:
+        case PromptType.TRUE_FALSE:
             # Handle true/false lesson logic
             pass
-        case LessonType.SINGLE_CHOICE:
+        case PromptType.SINGLE_CHOICE:
             # Handle single choice lesson logic
-            pass
-        case LessonType.EXPLANATION:
+            return await get_single_choice(prompt_request)
+        case PromptType.EXPLANATION:
             # Handle explanation lesson logic
             pass
         case _:

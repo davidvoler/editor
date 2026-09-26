@@ -1,12 +1,11 @@
 from models.prompts import (
     PromptRequest,
+    PromptOption,
     PromptActionType,
     PromptResponse,
 )   
 from utils.prompt_utils import save_prompt_request
 
-
-from utils.prompt_utils import save_prompt_request
 async def _identify_prompt_type(prompt_request: PromptRequest) -> ExerciseType:
     # Implement the logic to identify the prompt type based on the user message and context
     pass
@@ -41,7 +40,7 @@ async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
     pass
 
 
-async def handle_prompt_exercise_request(prompt_request: PromptRequest) -> PromptResponse:
+async def handle_prompt_vocabulary_request(prompt_request: PromptRequest) -> PromptResponse:
     exercise_type = await _identify_prompt_type(prompt_request)
     # Implement the logic to handle the prompt request based on the identified prompt type
     if not exercise_type:
