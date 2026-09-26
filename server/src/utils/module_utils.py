@@ -1,6 +1,6 @@
 from models.module import Module, ModuleFull
 from utils.db import get_query_results
-from utils.lesson_utils import get_module_lessons_full
+from utils.lesson_utils import get_module_lesson_full
 
 
 async def create_module(module: Module) -> Module:
@@ -25,7 +25,7 @@ async def get_module(module_id: int) -> Module:
 
 async def get_module_full(module_id: int) -> ModuleFull:
     module = await get_module(module_id)
-    lessons = await get_module_lessons_full(module_id)
+    lessons = await get_module_lesson_full(module_id)
     return ModuleFull(module=module, lessons=lessons)
 
 
