@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from models.lesson import LessonFull
 
 class ModuleOption(BaseModel):
     max_words_in_sentences: int|None = Field(..., description="The maximum number of words allowed in sentences for the module.")
@@ -29,3 +29,8 @@ class Module(BaseModel):
     #video fields applicable for lessons of type video
     video_url: str|None = None
     subtitles: list[str]|None = None
+
+
+class ModuleFull(Module):
+    module: Module|None = None
+    lessons: list[LessonFull]|None = None
