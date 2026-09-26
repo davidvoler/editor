@@ -351,3 +351,21 @@ We choose option 3
 [Client] Show results in chat window 
 [Client] Reload course/module data
 
+
+### Auth simplified
+- a new user for each school - if a user is member of multiple schools he simply has a new user record,permission for each school
+
+tables:
+user [user_id,school, permission, lang, to_lang]
+preferences [user_id,lang,to_lang] - this is needed for learning
+We could add preferences as a list into the user record
+
+
+Later we could think of school record and configurations there
+
+Pros 
+- simplicity
+- A single use to read from the database
+- User contains permission and maybe also preferences 
+Cons
+- The auth code was complicated - rewriting will be time consuming
