@@ -12,10 +12,9 @@ from prompt_routers.vocabulary import handle_prompt_vocabulary_request
 from utils.words_utils import course_words
 
 
-def _unused_words_count(prompt_request: PromptRequest, words: list) -> int:
+def _unused_words_count( words: list) -> int:
     # Implement the logic to count unused words for the prompt request
-    return max(0, len(words) - (prompt_request.exercise_count or 0))
-
+    return len([w for w in words if not w.used])
 
 async def _identify_prompt_router_type(prompt_request: PromptRequest) -> PromptRouterType:
     if prompt_request.last_router_type and prompt_request.last_router_type != PromptRouterType.UNKNOWN:
@@ -27,7 +26,7 @@ async def _identify_prompt_router_type(prompt_request: PromptRequest) -> PromptR
         # We do not have a module yet
         return PromptRouterType.MODULE
     words = await course_words(prompt_request.course_id, prompt_request.module_id)
-    if _unused_words_count(prompt_request, words) <= 2:
+    if _unused_words_count(words) <= 2:
         return PromptRouterType.VOCABULARY
     if len(words) >= 1:
         return PromptRouterType.EXERCISE
