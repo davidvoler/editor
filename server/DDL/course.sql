@@ -39,6 +39,7 @@ create table course_words (
     lesson_id int,
     word varchar(255) not null,
     translation text,
+    weight int2 DEFAULT 0 NULL,
     deleted boolean default false
 );
 

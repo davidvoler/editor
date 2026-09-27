@@ -9,13 +9,12 @@ class PromptResultsType(Enum):
     NEW_COURSE = "new_course"
     NEW_MODULE = "new_module"
     TASK_ID = "task_id" # show spinner and reload current module when spinner completes
-    
 
 # indicating which router took care of the prompt request
 class PromptRouterType(Enum):
-    COURSE = "create_course"
-    MODULE = "create_module"
-    LESSON = "create_lesson"
+    COURSE = "course"
+    MODULE = "module"
+    LESSON = "lesson"
     VOCABULARY = "vocabulary"
     EXERCISE = "exercise"
     VIDEO = "video"
@@ -26,8 +25,6 @@ class PromptActionType(Enum):
     OPTIONS = "options"
     ASK_AI = "ask_ai"
     CACHE = "cache"
-    SIMPLE_ACTION = "simple_action" # like create elements 
-    ATTRIBUTES = "attributes"
 
 
 class PromptType(Enum):
@@ -45,43 +42,33 @@ class PromptType(Enum):
     VIDEO_SECTIONS = "video_sections"
     VIDEO_PARTS = "video_parts"
 
-
 class PromptOptionData(BaseModel):
     label: str = Field(..., description="The label of the prompt option.")
     field_name: str = Field(..., description="The name of the field associated with the prompt option.")
     value: str|None = Field(..., description="The value associated with the prompt option.")
-    
-
-class PromptOption(BaseModel):
-    option_text: str = Field(..., description="The text of the option.")
-    option_value: str = Field(..., description="The value associated with the option.")
-    prompt_type: PromptRouterType = Field(..., description="The type of prompt this option is associated with.")
-    option_data: list[PromptOptionData]|None = Field(..., description="The data associated with the prompt option.")
-    selected: bool = Field(..., description="Indicates whether this option is selected.")
-    
 
 class PromptRequest(BaseModel):
-    words_list: list[Word]|None = Field(default=[], description="The list of words in the context.")
     course_id: int|None = Field(0, description="The ID of the course in the context.")
     module_id: int|None = Field(0, description="The ID of the module in the context.")
     lesson_id: int|None = Field(0, description="The ID of the lesson in the context.")
     user_message: str = Field('', description="The message input from the user.") 
     provider: str = Field('ollama', description="The AI provider associated with the prompt request.")
     model: str = Field('gemma4', description="The model to use for the prompt request.")
-    options: list[PromptOption]|None = Field([], description="The list of options associated with the prompt request.")
+    prompt_values: list|None = Field([], description="Values for the prompts could be words, sentences, or other relevant data.")
     router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
-    last_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
+    action_type: PromptActionType|None = Field(None, description="The type of action associated with the last prompt request.")
     last_action_type: PromptActionType|None = Field(None, description="The type of action associated with the last prompt request.")
-
-    def unused_words(self) -> int:
-        return len([word for word in self.words_list if not word.used])
-    def words_count(self) -> int:
-        return len(self.words_list)
+    last_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
 
 
+class PromptOption(PromptRequest):
+    option_text: str = Field(..., description="The text of the option.")
+    option_data: list[PromptOptionData]|None = Field(..., description="The data associated with the prompt option.")
 
 class PromptResponse(BaseModel):
-    prompt_request: PromptRequest = Field(None, description="The original prompt request associated with this response.")
+    #why do we need the full prompt request in the response?
+    #prompt_request: PromptRequest = Field(None, description="The original prompt request associated with this response.")
+    request_user_message: str = Field('', description="The message input from the user in the original request.")
     course_id: int|None = Field(0, description="The ID of the course in the context.")
     module_id: int|None = Field(0, description="The ID of the module in the context.")
     lesson_id: int|None = Field(0, description="The ID of the lesson in the context.")
