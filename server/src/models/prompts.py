@@ -51,6 +51,7 @@ class PromptRequest(BaseModel):
     course_id: int|None = Field(0, description="The ID of the course in the context.")
     module_id: int|None = Field(0, description="The ID of the module in the context.")
     lesson_id: int|None = Field(0, description="The ID of the lesson in the context.")
+    exercise_count: int|None = Field(0, description="The count of exercises in the context.")
     user_message: str = Field('', description="The message input from the user.") 
     provider: str = Field('ollama', description="The AI provider associated with the prompt request.")
     model: str = Field('gemma4', description="The model to use for the prompt request.")
