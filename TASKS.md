@@ -12,6 +12,12 @@
 ## Editing & Adding exercises
 - Edit Exercise 
 - Add by exercise type 
+
+### Ideas 
+- let the user after chat rate
+    - how well the AI understood what she wanted
+    - The quality of the content
+
 ### Question on how to proceed 
 
 Q. let claude copy code from old repo
@@ -46,11 +52,25 @@ Q. Should a prompt options should be of type PromptsRequest
 
 List of words - we could read it in the server side 
 words - if we collect it on the server side it saves us extra read form the client and than send to server
+What do we do when we want the user to select specific words for the exercise?
+How do we order words? 
+
+Option1 - sent from the client
+[Client] Read words for module - for display/order/delete 
+[Client] Add words for each Prompt
+[Server] Use words send to make decisions
+
+Option2 - red by the server
+[Client] Read words for module - for display/order/delete
+[Client] Generate a prompt without words
+[Server] read words from DB
+[Server] Use words to make decisions 
+
+Options 2 seems somewhat better only that requires an extra read from the database
 
 
 
-### Ideas 
-- let the user after chat rate
-    - how well the AI understood what she wanted
-    - The quality of the content
+
+
+
 
