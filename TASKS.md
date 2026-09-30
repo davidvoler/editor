@@ -1,11 +1,18 @@
 # TASKS
 
 ## New Chat framework
-- [v]  Get the framework to work client and server 
-- History of chat should work
-- The debug should be readable and can be used
-- Some easy testing
-- Maybe a mechanism to improve the cycle of prompts improvements - with AI 
+- [v] Get the framework to work client and server 
+- [] Initial complete course creation 
+    - [] create course/module/lesson
+    - [] create words 
+    - [] create exercise for words  
+- [] Video support 
+    - [] handle video module 
+    - [] break to sections 
+    - [] break to parts 
+- [] History of chat
+- [] The debug should be readable and can be used
+- [] A mechanism to improve the cycle of prompts improvements - with AI 
 ## Improve results 
 - Improve on the prompts
 - Verify the prompt router  
