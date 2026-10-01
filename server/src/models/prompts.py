@@ -38,9 +38,11 @@ class PromptType(Enum):
     COURSE_ATTRIBUTE = "course_attribute"
     MODULE_CREATE = "create_module"
     MODULE_ATTRIBUTE = "module_attribute"
-    MODULE_SUGGEST_WORDS = "suggest_words"
+    MODULE_CREATE_SUGGEST_WORDS = "create_module_suggest_words"
     VIDEO_SECTIONS = "video_sections"
     VIDEO_PARTS = "video_parts"
+    VOCABULARY_SUGGEST_WORDS = "vocabulary_suggest_words"
+
 
 class PromptOptionData(BaseModel):
     label: str = Field(..., description="The label of the prompt option.")
@@ -57,14 +59,14 @@ class PromptRequest(BaseModel):
     model: str = Field('gemma4', description="The model to use for the prompt request.")
     prompt_values: list|None = Field([], description="Values for the prompts could be words, sentences, or other relevant data.")
     router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
-    action_type: PromptActionType|None = Field(None, description="The type of action associated with the last prompt request.")
-    last_action_type: PromptActionType|None = Field(None, description="The type of action associated with the last prompt request.")
+    prompt_type: PromptType|None = Field(None, description="The type of action associated with the last prompt request.")
     last_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
-
+    last_prompt_type: PromptType|None = Field(None, description="The type of action associated with the last prompt request.")
+    comment: str|None = Field('', description="Additional comments associated with the prompt request.")
 
 class PromptOption(PromptRequest):
-    option_text: str = Field(..., description="The text of the option.")
-    option_data: list[PromptOptionData]|None = Field(..., description="The data associated with the prompt option.")
+    option_text: str = Field("", description="The text of the option.")
+    option_data: list[PromptOptionData]|None = Field(None, description="The data associated with the prompt option.")
 
 class PromptResponse(BaseModel):
     #why do we need the full prompt request in the response?

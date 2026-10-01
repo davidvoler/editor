@@ -1,4 +1,5 @@
 from models.prompts import (
+    PromptActionType,
     PromptRequest,
     PromptOption,
     PromptResponse,
@@ -75,6 +76,24 @@ async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
         options=options
     )
 
+
+def default_course_options(course_id:int)->list[PromptOption]:
+    return [
+        PromptOption(
+            course_id=course_id,
+            option_text="Create first module",
+            router_type=PromptRouterType.MODULE,
+            prompt_type=PromptType.MODULE_CREATE,
+            comment="Create the first module for the course."
+        ),
+        PromptOption(
+            course_id=course_id,
+            option_text="Suggest words",
+            router_type=PromptRouterType.MODULE,
+            prompt_type=PromptType.MODULE_CREATE_SUGGEST_WORDS,
+            comment="Create a module and, Suggest words for the module."
+        ),
+    ]
 
 async def handle_prompt_course_request(prompt_request: PromptRequest) -> PromptResponse:
     # TODO: _identify_prompt_type is out of date with the models; re-enable once fixed

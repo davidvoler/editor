@@ -17,15 +17,37 @@ class ChatPanel extends StatefulWidget {
 class _ChatPanelState extends State<ChatPanel> {
   final promptController = TextEditingController();
   final scrollController = ScrollController();
+  static const greeting =
+      'Hi! Tell me what you want to build for this course and I will help you shape it.';
+
   final messages = <ChatMessage>[
-    const ChatMessage(
-      text:
-          'Hi! Tell me what you want to build for this course and I will help you shape it.',
-      fromUser: false,
-      options: ChatResponder.startOptions,
-    ),
+    const ChatMessage(text: greeting, fromUser: false),
   ];
   bool waiting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStartingOptions();
+  }
+
+  Future<void> _loadStartingOptions() async {
+    final List<ChatOption> options;
+    try {
+      options = await widget.responder.startingOptions();
+    } catch (_) {
+      // The chat still works by typing when the options cannot be loaded.
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      messages[0] = ChatMessage(
+        text: greeting,
+        fromUser: false,
+        options: options,
+      );
+    });
+  }
 
   @override
   void dispose() {
