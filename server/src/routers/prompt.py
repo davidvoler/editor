@@ -10,6 +10,7 @@ router = APIRouter()
 
 @router.post("/prompt", response_model=TasksResultsRequest)
 async def _handle_prompt(request: PromptRequest)->TasksResultsRequest:
+   print(f"Handling prompt request: {request}")
    return await handle_prompt_task(request)
 
 

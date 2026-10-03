@@ -15,7 +15,7 @@ from utils.lesson_utils import create_lesson
 from utils.prompt_utils import save_prompt_request
 async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     # Implement the logic to identify the prompt type based on the user message and context
-    pass
+    return prompt_request.prompt_type
 
 async def _create_lesson(prompt_request: PromptRequest) -> Lesson:
     l = Lesson(
@@ -60,6 +60,7 @@ async def suggest_options(prompt_request: PromptRequest) -> PromptResponse:
     )
 
 async def _create_module(prompt_request: PromptRequest) -> Module:
+    print(f"---Creating module with prompt request---")
     m = Module(
         course_id=prompt_request.course_id,
         title="Module 1",  # Replace with actual value from prompt_request
@@ -74,6 +75,7 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
     # Implement the logic to process the prompt request based on the identified prompt type
     match(prompt_type):
         case PromptType.MODULE_CREATE:
+            print(f"---Processing MODULE_CREATE prompt request---")
             m = await _create_module(prompt_request)
             return PromptResponse(
                 course_id=m.course_id,

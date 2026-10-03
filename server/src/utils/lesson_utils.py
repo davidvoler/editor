@@ -4,12 +4,13 @@ from utils.db import get_query_results
 
 async def create_lesson(lesson: Lesson) -> Lesson:
     sql = """
-    INSERT INTO course.lesson (module_id, title, content, deleted, weight)
-    VALUES (%s, %s, %s, %s, %s)
-    RETURNING lesson_id, module_id, title, content, deleted, weight
+    INSERT INTO course.lesson (module_id, title, deleted, weight)
+    VALUES (%s, %s, %s, %s)
+    RETURNING lesson_id, module_id, title, deleted, weight
     """
-    values = (lesson.module_id, lesson.title, lesson.content, lesson.deleted, lesson.weight)
+    values = (lesson.module_id, lesson.title, lesson.deleted, lesson.weight)
     row = await get_query_results(sql, values)
+    print(row)
     return Lesson(**row)
 
 async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
@@ -25,7 +26,7 @@ async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
 
 async def get_lesson_full(lesson_id: int) -> LessonFull:
     sql = """
-    SELECT lesson_id, module_id, title, content, deleted, weight
+    SELECT lesson_id, module_id, title, deleted, weight
     FROM course.lesson
     WHERE lesson_id = %s
     """
@@ -39,7 +40,7 @@ async def get_lesson_full(lesson_id: int) -> LessonFull:
 
 async def get_lesson(lesson_id: int) -> Lesson:
     sql = """
-    SELECT lesson_id, module_id, title, content, deleted, weight
+    SELECT lesson_id, module_id, title, deleted, weight
     FROM course.lesson
     WHERE lesson_id = %s
     """
@@ -49,7 +50,7 @@ async def get_lesson(lesson_id: int) -> Lesson:
 
 async def get_module_lessons(module_id: int) -> list[Lesson]:
     sql = """
-    SELECT lesson_id, module_id, title, content, deleted, weight
+    SELECT lesson_id, module_id, title, deleted, weight
     FROM course.lesson
     WHERE module_id = %s
     """
@@ -60,7 +61,7 @@ async def get_module_lessons(module_id: int) -> list[Lesson]:
 
 async def get_module_lesson_full(module_id: int) -> list[LessonFull]:
     sql = """
-    SELECT lesson_id, module_id, title, content, deleted, weight
+    SELECT lesson_id, module_id, title, deleted, weight
     FROM course.lesson
     WHERE module_id = %s
     """

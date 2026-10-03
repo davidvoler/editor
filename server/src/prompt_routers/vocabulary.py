@@ -44,10 +44,10 @@ async def handle_prompt_vocabulary_request(prompt_request: PromptRequest) -> Pro
     exercise_type = await _identify_prompt_type(prompt_request)
     # Implement the logic to handle the prompt request based on the identified prompt type
     if not exercise_type:
-        save_prompt_request(prompt_request, PromptActionType.OPTIONS)
+        save_prompt_request(prompt_request)
         return await _offer_options(prompt_request)
     else:
-        save_prompt_request(prompt_request, PromptActionType.ASK_AI)
+        save_prompt_request(prompt_request)
         await _process_prompt_request(prompt_request, exercise_type)
 
 

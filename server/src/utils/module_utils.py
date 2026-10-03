@@ -9,9 +9,12 @@ async def create_module(module: Module) -> Module:
     VALUES (%s, %s, %s, %s, %s)
     RETURNING module_id, course_id, title, description, deleted, weight
     """
+    print(f"Executing SQL: {sql}")
     values = (module.course_id, module.title, module.description, module.deleted, module.weight)
     row = await get_query_results(sql, values)
-    return Module(**row)
+    print(f"Created module: {row}")
+    print(f"Row returned from database: {row}")
+    return Module(**row[0])
 
 async def get_module(module_id: int) -> Module:
     sql = """
@@ -21,7 +24,7 @@ async def get_module(module_id: int) -> Module:
     """
     values = (module_id,)
     row = await get_query_results(sql, values)
-    return Module(**row)
+    return Module(**row[0])
 
 async def get_module_full(module_id: int) -> ModuleFull:
     module = await get_module(module_id)
