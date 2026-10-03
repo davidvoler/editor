@@ -1,11 +1,11 @@
-from urllib import request
-
 from fastapi import APIRouter, Depends, HTTPException
 from models.prompts import PromptOption, PromptRequest, PromptResponse, PromptOption
+from models.context import PromptsContext
 from models.tasks import TasksResultsRequest
 from tasks.prompt_tasks import handle_prompt_task
 from utils.prompt_utils import get_last_responses
 from prompt_routers.course import default_course_options
+
 router = APIRouter()
 
 @router.post("/prompt", response_model=TasksResultsRequest)
@@ -24,3 +24,7 @@ async def _default_options(course_id:int)->list[PromptOption]:
     return default_course_options(course_id)
 
 
+@router.get("/context", response_model=PromptsContext)
+async def _get_context(course_id:int, module_id:int = 0, lesson_id:int = 0)->PromptsContext:
+   
+   return PromptsContext(course_id=course_id, module_id=module_id, lesson_id=lesson_id)

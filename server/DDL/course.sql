@@ -154,6 +154,15 @@ create table course.prompt_response (
     created_at timestamp default now()
 );
 
+drop table if exists course.prompt_context;
+create table course.prompt_context (
+    context_id serial primary key,
+    course_id int,
+    module_id int,
+    lesson_id int,
+    created_at timestamp default now()
+);
+
 
 
 
