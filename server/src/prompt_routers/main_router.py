@@ -25,10 +25,12 @@ async def _identify_prompt_router_type(prompt_request: PromptRequest) -> PromptR
     if prompt_request.module_id is None or prompt_request.module_id<=0:
         # We do not have a module yet
         return PromptRouterType.MODULE
-    words = await course_words(prompt_request.course_id, prompt_request.module_id)
-    if _unused_words_count(words) <= 2:
+    if not prompt_request.words or len(prompt_request.words) == 0:
+        words = await course_words(prompt_request.course_id, prompt_request.module_id)
+        prompt_request.words = words
+    if _unused_words_count(prompt_request.words) <= 2:
         return PromptRouterType.VOCABULARY
-    if len(words) >= 1:
+    if len(prompt_request.words) >= 1:
         return PromptRouterType.EXERCISE
     return PromptRouterType.UNKNOWN
 

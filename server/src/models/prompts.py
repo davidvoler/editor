@@ -25,6 +25,7 @@ class PromptActionType(Enum):
     OPTIONS = "options"
     ASK_AI = "ask_ai"
     CACHE = "cache"
+    SIMPLE = "simple"
 
 
 class PromptType(Enum):
@@ -63,8 +64,11 @@ class PromptRequest(BaseModel):
     last_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with the prompt request.")
     last_prompt_type: PromptType|None = Field(None, description="The type of action associated with the last prompt request.")
     comment: str|None = Field('', description="Additional comments associated with the prompt request.")
+    words: list[Word]|None = Field([], description="The list of words associated with the prompt request.")
+
 
 class PromptOption(PromptRequest):
+    is_options: bool = Field(True, description="Indicates whether this is an option.")
     option_text: str = Field("", description="The text of the option.")
     option_data: list[PromptOptionData]|None = Field(None, description="The data associated with the prompt option.")
 
@@ -83,5 +87,5 @@ class PromptResponse(BaseModel):
     prompt_router_type: PromptRouterType|None = Field(None, description="The type of prompt router associated with this response, if applicable.")
     prompt_type: PromptType|None = Field(None, description="The type of prompt associated with this response, if applicable.")
     prompt_action_type: PromptActionType|None = Field(None, description="The type of action associated with this response, if applicable.")
-    
+    is_option: bool|None = Field(None, description="Indicates whether this response is an option.")
 

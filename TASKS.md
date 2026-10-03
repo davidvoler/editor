@@ -76,7 +76,12 @@ Option2 - red by the server
 Options 2 seems somewhat better only that requires an extra read from the database
 
 
-
+Q. I have options MODULE_CREATE_SUGGEST_WORDS - I create a module and than suggest words 
+I need it because I need the module ID for suggesting the words
+I thought of the following options 
+- prompts should revive a list of prompts request
+- We should create prompts type for complex requests 
+In this case we do need the module id for saving the words 
 
 
 
