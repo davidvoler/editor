@@ -4,18 +4,18 @@ from utils.db import get_query_results
 
 async def create_lesson(lesson: Lesson) -> Lesson:
     sql = """
-    INSERT INTO course.lesson (module_id, title, deleted, weight)
-    VALUES (%s, %s, %s, %s)
-    RETURNING lesson_id, module_id, title, deleted, weight
+    INSERT INTO course.lesson (course_id, module_id, title, description, deleted, weight)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    RETURNING lesson_id, course_id, module_id, title, description, deleted, weight
     """
-    values = (lesson.module_id, lesson.title, lesson.deleted, lesson.weight)
+    values = (lesson.course_id, lesson.module_id, lesson.title, lesson.description, lesson.deleted, lesson.weight)
     row = await get_query_results(sql, values)
-    print(row)
-    return Lesson(**row)
+    return Lesson(**row[0])
 
 async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
     sql = """
-    SELECT exercise_id, lesson_id, title, content, deleted, weight
+    SELECT exercise_id, course_id, module_id, lesson_id, exercise_type, question, options,
+        explanation, sentence_alt1, sentence_alt2, sentence_alt3, ruby_text, annotations, answer
     FROM course.exercise
     WHERE lesson_id = %s
     """
@@ -26,31 +26,30 @@ async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
 
 async def get_lesson_full(lesson_id: int) -> LessonFull:
     sql = """
-    SELECT lesson_id, module_id, title, deleted, weight
+    SELECT lesson_id, course_id, module_id, title, description, deleted, weight
     FROM course.lesson
     WHERE lesson_id = %s
     """
     values = (lesson_id,)
     row = await get_query_results(sql, values)
-    lesson = Lesson(**row)
-    # Here you would typically retrieve related resources from the database
+    lesson = Lesson(**row[0])
     exercise = await get_lesson_exercises(lesson_id)
-    return LessonFull(lesson=lesson, exercises=exercise, resources=resources)
+    return LessonFull(lesson=lesson, exercises=exercise)
 
 
 async def get_lesson(lesson_id: int) -> Lesson:
     sql = """
-    SELECT lesson_id, module_id, title, deleted, weight
+    SELECT lesson_id, course_id, module_id, title, description, deleted, weight
     FROM course.lesson
     WHERE lesson_id = %s
     """
     values = (lesson_id,)
     row = await get_query_results(sql, values)
-    return Lesson(**row)
+    return Lesson(**row[0])
 
 async def get_module_lessons(module_id: int) -> list[Lesson]:
     sql = """
-    SELECT lesson_id, module_id, title, deleted, weight
+    SELECT lesson_id, course_id, module_id, title, description, deleted, weight
     FROM course.lesson
     WHERE module_id = %s
     """
@@ -61,7 +60,7 @@ async def get_module_lessons(module_id: int) -> list[Lesson]:
 
 async def get_module_lesson_full(module_id: int) -> list[LessonFull]:
     sql = """
-    SELECT lesson_id, module_id, title, deleted, weight
+    SELECT lesson_id, course_id, module_id, title, description, deleted, weight
     FROM course.lesson
     WHERE module_id = %s
     """
@@ -77,13 +76,13 @@ async def get_module_lesson_full(module_id: int) -> list[LessonFull]:
 async def update_lesson(lesson: Lesson) -> Lesson:
     sql = """
     UPDATE course.lesson
-    SET module_id = %s, title = %s, content = %s, deleted = %s, weight = %s
+    SET module_id = %s, title = %s, description = %s, deleted = %s, weight = %s
     WHERE lesson_id = %s
-    RETURNING lesson_id, module_id, title, content, deleted, weight
+    RETURNING lesson_id, course_id, module_id, title, description, deleted, weight
     """
-    values = (lesson.module_id, lesson.title, lesson.content, lesson.deleted, lesson.weight, lesson.lesson_id)
+    values = (lesson.module_id, lesson.title, lesson.description, lesson.deleted, lesson.weight, lesson.lesson_id)
     row = await get_query_results(sql, values)
-    return Lesson(**row)
+    return Lesson(**row[0])
 
 async def delete_lesson(lesson: Lesson) -> None:
     sql = """
