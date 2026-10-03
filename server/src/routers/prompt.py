@@ -5,6 +5,7 @@ from models.tasks import TasksResultsRequest
 from tasks.prompt_tasks import handle_prompt_task
 from utils.prompt_utils import get_last_responses
 from prompt_routers.course import default_course_options
+from utils.context_utils import get_or_create_context
 
 router = APIRouter()
 
@@ -24,7 +25,6 @@ async def _default_options(course_id:int)->list[PromptOption]:
     return default_course_options(course_id)
 
 
-@router.get("/context", response_model=PromptsContext)
-async def _get_context(course_id:int, module_id:int = 0, lesson_id:int = 0)->PromptsContext:
-   
-   return PromptsContext(course_id=course_id, module_id=module_id, lesson_id=lesson_id)
+@router.post("/context", response_model=PromptsContext)
+async def _get_or_create_context(context:PromptsContext)->PromptsContext:
+   return await get_or_create_context(course_id=context.course_id, module_id=context.module_id, lesson_id=context.lesson_id)

@@ -86,3 +86,14 @@ In this case we do need the module id for saving the words
 
 
 
+### Course Context - or PromptContext
+When working on a course we should have a context 
+The current course/module/lesson ids 
+The next time we open the window we know exactly where we were 
+
+How do it work 
+When a user opens a new course 
+We do not have a module of lesson 
+The get or create context - will create the first lessons 
+When user chooses to add a module 
+The client will move the  

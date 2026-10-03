@@ -12,9 +12,16 @@ async def save_context(context: PromptsContext) -> PromptsContext:
     """
     params = (context.course_id, context.module_id, context.lesson_id)
     results = await get_query_results(sql, params)
-    return PromptsContext(**results[0])
+    pc = PromptsContext(**results[0])   
+    if  context.words:
+        pc.words = context.words
+    else:
+        pc.words = await course_words(course_id=pc.course_id, module_id=pc.module_id)
+    return pc
 
-async def get_or_create_context(course_id: int, module_id: int = 0) -> PromptsContext:
+async def get_or_create_context(course_id: int, module_id: int = 0, lesson_id: int = 0) -> PromptsContext:
+    if course_id == 0:
+        return PromptsContext(course_id=0, module_id=0, lesson_id=0)
     if module_id == 0:
         whr = "course_id = %s AND module_id = %s"
     else:
