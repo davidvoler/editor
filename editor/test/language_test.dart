@@ -6,8 +6,7 @@ void main() {
   test('parses a language and labels it with its native name', () {
     final spanish = Language.fromJson({
       'code': 'es',
-      'name_language_code': 'Spanish',
-      'name': 'Español',
+      'name': 'Spanish',
       'native_name': 'Español',
       'weight': 3,
     });

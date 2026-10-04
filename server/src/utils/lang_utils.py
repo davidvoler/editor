@@ -3,11 +3,6 @@ from babel import Locale
 from babel.core import UnknownLocaleError
 from models.language import Language
 
-# class Language(BaseModel):
-#     code: str = Field(..., description="The language code")
-#     name_language_code: str = Field(..., description="The name in the requested target language")
-#     name: str = Field(..., description="The native name of the language (autonym)")
-#     weight: int = Field(..., description="The weight for ordering purposes")
 
 
 # Top 100 most common languages (ordered by speaker count / global prevalence)
@@ -51,14 +46,10 @@ def get_top_languages(request_locale: str = "en") -> list[Language]:
         result.append(
             Language(
                 code=code,
-                name_language_code=translated_name.capitalize(),
-                name=native_name.capitalize(),
+                name=translated_name.capitalize(),
                 native_name=native_name.capitalize(),
                 weight=weight
             )
         )
 
     return result
-l = get_top_languages('he')
-for lang in l:
-    print(f"{lang.code}: {lang.name_language_code} ({lang.name}) - weight: {lang.weight}")
