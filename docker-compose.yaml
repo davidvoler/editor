@@ -37,10 +37,8 @@ services:
     ports:
       - 8006:8006
     volumes:
-      # Mounted at the host path so tracebacks point at real local files.
-      # pytest suite (server/tests) — run with:
-      #   docker compose exec -w /Users/davidle/dev/tutorial/editor/server server python -m pytest -q
-      - ./server:/Users/davidle/dev/tutorial/editor/server
+      - ./server:${PWD}/server
+    working_dir: ${PWD}/server/src
     environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -76,10 +74,11 @@ services:
       - --log-level 
       - INFO
       - --reload
+    
     volumes:
-      - ./server:/Users/davidle/dev/tutorial/editor/server
+      - ./server:${PWD}/server
+    working_dir: ${PWD}/server/src
     environment: *server-env
-
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
