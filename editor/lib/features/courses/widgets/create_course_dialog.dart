@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/course.dart';
+import '../data/language.dart';
 
-class CreateCourseDialog extends StatefulWidget {
+class CreateCourseDialog extends ConsumerStatefulWidget {
   const CreateCourseDialog({super.key});
 
   @override
-  State<CreateCourseDialog> createState() => _CreateCourseDialogState();
+  ConsumerState<CreateCourseDialog> createState() => _CreateCourseDialogState();
 }
 
-class _CreateCourseDialogState extends State<CreateCourseDialog> {
+class _CreateCourseDialogState extends ConsumerState<CreateCourseDialog> {
   final titleController = TextEditingController();
-  String learningLanguage = 'Spanish';
-  String studentLanguage = 'English';
+
+  /// ISO codes of the picked languages.
+  String learningLanguage = 'es';
+  String studentLanguage = 'en';
   String level = 'A1';
 
   @override
@@ -21,18 +25,30 @@ class _CreateCourseDialogState extends State<CreateCourseDialog> {
     super.dispose();
   }
 
+  /// The server's languages, or the built-in ones until they load or when
+  /// they cannot be loaded.
+  List<Language> get languages =>
+      ref.watch(languagesProvider).value ?? builtInLanguages;
+
+  String _name(String code) => languages
+      .firstWhere(
+        (language) => language.code == code,
+        orElse: () => Language(code: code, name: languageName(code)),
+      )
+      .name;
+
   void submit() {
     final title = titleController.text.trim();
     if (title.isEmpty) return;
     Navigator.of(context).pop(
       Course(
         title: title,
-        learningLanguage: learningLanguage,
-        studentLanguage: studentLanguage,
+        learningLanguage: _name(learningLanguage),
+        studentLanguage: _name(studentLanguage),
         level: level,
-        monogram: learningLanguage.substring(0, 2).toUpperCase(),
-        lang: languageCode(learningLanguage),
-        toLang: languageCode(studentLanguage),
+        monogram: learningLanguage.toUpperCase(),
+        lang: learningLanguage,
+        toLang: studentLanguage,
       ),
     );
   }
@@ -96,26 +112,20 @@ class _CreateCourseDialogState extends State<CreateCourseDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: CourseDropdown(
+                    child: LanguageDropdown(
                       label: 'Learning language',
                       value: learningLanguage,
-                      values: const [
-                        'Spanish',
-                        'German',
-                        'French',
-                        'Japanese',
-                        'English',
-                      ],
+                      languages: languages,
                       onChanged: (value) =>
                           setState(() => learningLanguage = value!),
                     ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                    child: CourseDropdown(
+                    child: LanguageDropdown(
                       label: 'Student language',
                       value: studentLanguage,
-                      values: const ['English', 'Spanish', 'German', 'French'],
+                      languages: languages,
                       onChanged: (value) =>
                           setState(() => studentLanguage = value!),
                     ),
@@ -174,6 +184,41 @@ class CourseDropdown extends StatelessWidget {
     items: values
         .map((item) => DropdownMenuItem(value: item, child: Text(item)))
         .toList(),
+    onChanged: onChanged,
+  );
+}
+
+/// Picks a language by its ISO code.
+class LanguageDropdown extends StatelessWidget {
+  const LanguageDropdown({
+    required this.label,
+    required this.value,
+    required this.languages,
+    required this.onChanged,
+    super.key,
+  });
+
+  final String label;
+  final String value;
+  final List<Language> languages;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => DropdownButtonFormField<String>(
+    // Rebuilt when the server's list replaces the built-in one.
+    key: ValueKey(languages.length),
+    initialValue: languages.any((language) => language.code == value)
+        ? value
+        : null,
+    isExpanded: true,
+    decoration: InputDecoration(labelText: label),
+    items: [
+      for (final language in languages)
+        DropdownMenuItem(
+          value: language.code,
+          child: Text(language.label, overflow: TextOverflow.ellipsis),
+        ),
+    ],
     onChanged: onChanged,
   );
 }

@@ -12,12 +12,14 @@ import 'package:editor/features/chat/data/chat_responder.dart';
 import 'package:editor/features/chat/data/prompt_router_responder.dart';
 import 'package:editor/features/courses/data/course.dart';
 import 'package:editor/features/courses/data/courses_repository.dart';
+import 'package:editor/features/courses/data/language.dart';
 import 'package:editor/main.dart';
 
 // Serve the sample courses and canned replies instead of calling the server.
 Widget buildApp() => ProviderScope(
   overrides: [
     coursesProvider.overrideWith((ref) async => sampleCourses),
+    languagesProvider.overrideWith((ref) async => builtInLanguages),
     responderFactoryProvider.overrideWithValue(
       (course) => ChatResponder(course: course),
     ),

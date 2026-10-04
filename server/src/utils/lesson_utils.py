@@ -52,6 +52,7 @@ async def get_module_lessons(module_id: int) -> list[Lesson]:
     SELECT lesson_id, course_id, module_id, title, description, deleted, weight
     FROM course.lesson
     WHERE module_id = %s
+    ORDER BY weight, lesson_id
     """
     values = (module_id,)
     rows = await get_query_results(sql, values)
@@ -63,6 +64,7 @@ async def get_module_lesson_full(module_id: int) -> list[LessonFull]:
     SELECT lesson_id, course_id, module_id, title, description, deleted, weight
     FROM course.lesson
     WHERE module_id = %s
+    ORDER BY weight, lesson_id
     """
     values = (module_id,)
     rows = await get_query_results(sql, values)

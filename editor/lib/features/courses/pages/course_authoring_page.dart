@@ -7,6 +7,7 @@ import '../../chat/widgets/chat_panel.dart';
 import '../../modules/data/module.dart';
 import '../../modules/pages/module_editing_page.dart';
 import '../data/course.dart';
+import '../data/prompts_context.dart';
 
 class CourseAuthoringPage extends ConsumerWidget {
   const CourseAuthoringPage({required this.course, super.key});
@@ -104,10 +105,22 @@ class CourseDataPane extends ConsumerStatefulWidget {
 }
 
 class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
-  /// The module whose lessons are shown. Defaults to the first module.
-  int? currentModuleId;
-
   Course get course => widget.course;
+
+  /// Makes the module, and the lesson when given, the course's current
+  /// context.
+  Future<void> _select(int courseId, int moduleId, [int lessonId = 0]) async {
+    try {
+      await ref
+          .read(courseContextProvider(courseId).notifier)
+          .select(moduleId: moduleId, lessonId: lessonId);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save the context.\n$error')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +177,13 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
   Widget _buildModules() {
     final id = course.id;
     if (id == null) return _EmptyModules(course: course);
+    // Loading the context can create the first module and lesson, so the
+    // modules are fetched only once it is there.
+    final courseContext = ref.watch(courseContextProvider(id));
+    if (courseContext.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final current = courseContext.value;
     return ref
         .watch(modulesProvider(id))
         .when(
@@ -183,8 +203,10 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
           ),
           data: (modules) {
             if (modules.isEmpty) return _EmptyModules(course: course);
-            final current = modules.any((m) => m.id == currentModuleId)
-                ? currentModuleId
+            // The context's module is current, else the first module.
+            final currentModuleId =
+                modules.any((m) => m.id == current?.moduleId)
+                ? current!.moduleId
                 : modules.first.id;
             return ListView.separated(
               itemCount: modules.length,
@@ -193,8 +215,10 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                 final module = modules[index];
                 return _ModuleCard(
                   module: module,
-                  isCurrent: module.id == current,
-                  onTap: () => setState(() => currentModuleId = module.id),
+                  isCurrent: module.id == currentModuleId,
+                  currentLessonId: current?.lessonId ?? 0,
+                  onTap: () => _select(id, module.id),
+                  onLessonTap: (lesson) => _select(id, module.id, lesson.id),
                 );
               },
             );
@@ -207,12 +231,16 @@ class _ModuleCard extends ConsumerWidget {
   const _ModuleCard({
     required this.module,
     required this.isCurrent,
+    required this.currentLessonId,
     required this.onTap,
+    required this.onLessonTap,
   });
 
   final Module module;
   final bool isCurrent;
+  final int currentLessonId;
   final VoidCallback onTap;
+  final ValueChanged<Lesson> onLessonTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -270,7 +298,12 @@ class _ModuleCard extends ConsumerWidget {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final lesson in lessons) _LessonRow(lesson: lesson),
+                      for (final lesson in lessons)
+                        _LessonRow(
+                          lesson: lesson,
+                          isCurrent: lesson.id == currentLessonId,
+                          onTap: () => onLessonTap(lesson),
+                        ),
                     ],
                   ),
           ),
@@ -279,9 +312,15 @@ class _ModuleCard extends ConsumerWidget {
 }
 
 class _LessonRow extends StatelessWidget {
-  const _LessonRow({required this.lesson});
+  const _LessonRow({
+    required this.lesson,
+    required this.isCurrent,
+    required this.onTap,
+  });
 
   final Lesson lesson;
+  final bool isCurrent;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -290,33 +329,47 @@ class _LessonRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.menu_book_outlined,
-                size: 17,
-                color: Color(0xFFB86F46),
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+              decoration: BoxDecoration(
+                color: isCurrent ? const Color(0xFFE3EAE5) : null,
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  lesson.title.isEmpty ? 'Untitled lesson' : lesson.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF17252D),
-                    fontSize: 14,
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.menu_book_outlined,
+                    size: 17,
+                    color: Color(0xFFB86F46),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      lesson.title.isEmpty ? 'Untitled lesson' : lesson.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF17252D),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${lesson.exercises.length} exercises',
+                    style: const TextStyle(
+                      color: Color(0xFF8A979A),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '${lesson.exercises.length} exercises',
-                style: const TextStyle(color: Color(0xFF8A979A), fontSize: 12),
-              ),
-            ],
+            ),
           ),
           for (final exercise in lesson.exercises)
             Padding(
-              padding: const EdgeInsets.only(left: 25, top: 4),
+              padding: const EdgeInsets.only(left: 31, top: 4),
               child: Text(
                 [
                   if (exercise.type.isNotEmpty) exercise.type,

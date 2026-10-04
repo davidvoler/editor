@@ -37,6 +37,7 @@ async def get_course_modules(course_id: int) -> list[Module]:
     SELECT module_id, course_id, title, description, deleted, weight
     FROM course.module
     WHERE course_id = %s
+    ORDER BY weight, module_id
     """
     values = (course_id,)
     rows = await get_query_results(sql, values)
