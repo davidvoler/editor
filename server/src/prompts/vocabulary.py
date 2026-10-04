@@ -13,9 +13,9 @@ async def prompt_suggested_words(
     provider: str = "ollama",
     model: str = "llama3.1") -> WordTranslationList:
     """Generate a list of words and their translations. for students speaking {to_lang} learning {lang}. """
-    # model_instance = get_ai_model(provider, model)
+    model_instance = get_ai_model(provider, model)
     agent = Agent(
-        f"{provider}:{model}",
+        model_instance,
         output_type=WordTranslationList,
         system_prompt=f"You are an expert {lang} language teacher.")
     

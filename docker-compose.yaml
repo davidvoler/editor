@@ -79,6 +79,7 @@ services:
     volumes:
       - ./server:/Users/davidle/dev/tutorial/editor/server
     environment: *server-env
+    
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
