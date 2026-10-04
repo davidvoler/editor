@@ -31,6 +31,8 @@ class _CreateCourseDialogState extends State<CreateCourseDialog> {
         studentLanguage: studentLanguage,
         level: level,
         monogram: learningLanguage.substring(0, 2).toUpperCase(),
+        lang: languageCode(learningLanguage),
+        toLang: languageCode(studentLanguage),
       ),
     );
   }

@@ -5,6 +5,7 @@ import '../../../core/widgets/navigation_rail_panel.dart';
 import '../../courses/data/course.dart';
 import '../../courses/data/courses_repository.dart';
 import '../../courses/pages/course_authoring_page.dart';
+import '../../courses/widgets/create_course_dialog.dart';
 import '../data/prompt_router_responder.dart';
 import '../widgets/chat_panel.dart';
 
@@ -18,6 +19,41 @@ class ChatPage extends ConsumerStatefulWidget {
 class _ChatPageState extends ConsumerState<ChatPage> {
   Course? selected;
 
+  /// Asks for the course details, saves the course and switches the chat
+  /// to it.
+  Future<void> _createCourse() async {
+    final draft = await showDialog<Course>(
+      context: context,
+      builder: (_) => const CreateCourseDialog(),
+    );
+    if (!mounted || draft == null) return;
+    try {
+      final created = await ref
+          .read(coursesRepositoryProvider)
+          .createCourse(draft);
+      if (!mounted) return;
+      setState(() => selected = created);
+      ref.invalidate(coursesProvider);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not create the course.\n$error')),
+      );
+    }
+  }
+
+  /// The selected course as it appears in [courses], or the first course.
+  /// Matches by id too, since reloading the list builds new instances.
+  Course _current(List<Course> courses) {
+    final selected = this.selected;
+    return courses.firstWhere(
+      (course) =>
+          course == selected ||
+          (selected?.id != null && course.id == selected?.id),
+      orElse: () => courses.first,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final courses = ref.watch(coursesProvider);
@@ -28,13 +64,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           Expanded(
             child: courses.when(
               data: (courses) => courses.isEmpty
-                  ? const Center(
-                      child: Text('No courses yet. Add one from Courses.'),
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('No courses yet.'),
+                          const SizedBox(height: 16),
+                          _buildNewCourseButton(),
+                        ],
+                      ),
                     )
-                  : _buildChat(
-                      courses,
-                      courses.contains(selected) ? selected! : courses.first,
-                    ),
+                  : _buildChat(courses, _current(courses)),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: Column(
@@ -116,8 +156,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 .toList(),
             onChanged: (value) => setState(() => selected = value),
           ),
+          const SizedBox(width: 16),
+          _buildNewCourseButton(),
         ],
       ),
     );
   }
+
+  Widget _buildNewCourseButton() => FilledButton.icon(
+    onPressed: _createCourse,
+    icon: const Icon(Icons.add_rounded, size: 19),
+    label: const Text('New course'),
+  );
 }

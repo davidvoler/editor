@@ -20,6 +20,8 @@ async def _get_course(course_id: int, school_user=Depends(get_school_user)):
 
 @router.post("/course")
 async def _create_course(course: Course, school_user=Depends(get_school_user)):
+    course.user_id = school_user.user_id
+    course.school = school_user.school
     return await create_course(course)
 
 @router.put("/course")
