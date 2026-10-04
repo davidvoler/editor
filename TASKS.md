@@ -97,3 +97,12 @@ We do not have a module of lesson
 The get or create context - will create the first lessons 
 When user chooses to add a module 
 The client will move the  
+[client]create course 
+[client] get_or_create_context
+[client] add lesson -> get_or_create_context
+[user] select a different module/lesson -> save context
+
+
+Q. Should we include words in this context
+- For - a simple read when ever we need context
+- Against - simplify calls to the server 

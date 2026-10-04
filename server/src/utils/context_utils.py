@@ -1,6 +1,5 @@
 from models.context import PromptsContext
 from utils.db import get_query_results
-from utils.module_utils import create_course
 from utils.lesson_utils import create_lesson
 from utils.words_utils import course_words
 
