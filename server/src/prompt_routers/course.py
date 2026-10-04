@@ -79,18 +79,18 @@ async def _offer_options(prompt_request: PromptRequest) -> PromptResponse:
 
 def default_course_options(course_id:int)->list[PromptOption]:
     return [
-        PromptOption(
-            course_id=course_id,
-            option_text="Create first module",
-            router_type=PromptRouterType.MODULE,
-            prompt_type=PromptType.MODULE_CREATE,
-            comment="Create the first module for the course."
-        ),
+        # PromptOption(
+        #     course_id=course_id,
+        #     option_text="Create first module",
+        #     router_type=PromptRouterType.MODULE,
+        #     prompt_type=PromptType.MODULE_CREATE,
+        #     comment="Create the first module for the course."
+        # ),
         PromptOption(
             course_id=course_id,
             option_text="Suggest words",
-            router_type=PromptRouterType.MODULE,
-            prompt_type=PromptType.MODULE_CREATE_SUGGEST_WORDS,
+            router_type=PromptRouterType.VOCABULARY,
+            prompt_type=PromptType.VOCABULARY_SUGGEST_WORDS,
             comment="Create a module and, Suggest words for the module."
         ),
     ]

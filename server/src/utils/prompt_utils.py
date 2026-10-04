@@ -67,11 +67,8 @@ async def save_prompt_request(prompt_request: PromptRequest) -> int|None:
         user_message,
         provider,
         model,
-        options,
-        last_router_type,
-        last_action_type
     ) VALUES (
-        %s,%s,%s,%s,%s,%s,%s,%s,%s)
+        %s,%s,%s,%s,%s,%s)
     RETURNING prompt_request_id
     """
     values = (
@@ -81,9 +78,6 @@ async def save_prompt_request(prompt_request: PromptRequest) -> int|None:
         prompt_request.user_message,
         prompt_request.provider,
         prompt_request.model,
-        json.dumps(prompt_request.options),
-        prompt_request.last_router_type,
-        prompt_request.last_action_type,
     )
     # Execute the SQL statement with the values using your database connection
     res = await get_query_results(sql, values)

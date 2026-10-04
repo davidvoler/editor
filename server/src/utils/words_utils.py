@@ -1,5 +1,5 @@
-from utils.db import get_query_results
-from models.word import Word
+from utils.db import get_query_results, run_query
+from models.word import (Word, WordTranslationList, WordTranslation)
 
 
 async def course_words(course_id:int, module_id:int|None = None) -> list[Word]: 
@@ -15,3 +15,19 @@ async def course_words(course_id:int, module_id:int|None = None) -> list[Word]:
         params["module_id"] = module_id
     results = await get_query_results(query, params)
     return [Word(**row) for row in results]
+
+async def save_words(course_id:int, module_id:int|None = 0, words: list[WordTranslation] = []):
+    query = """
+    INSERT INTO course_words (course_id, module_id, word, translation)
+    VALUES (%(course_id)s, %(module_id)s, %(word)s, %(translation)s)
+    ON CONFLICT (course_id, module_id, word) DO UPDATE SET translation = EXCLUDED.translation
+    """
+    for word_translation in words:
+        params = {
+            "course_id": course_id,
+            "module_id": module_id,
+            "word": word_translation.word,
+            "translation": word_translation.translation
+        }
+        await run_query(query, params)
+
