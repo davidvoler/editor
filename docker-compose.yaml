@@ -10,7 +10,7 @@ x-server-env: &server-env
   - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
   - ENABLE_DOCS=true
   - COOKIE_SECURE=false
-  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
   - REDIS_HOST=redis
   - REDIS_PORT=6379
 services:
@@ -79,7 +79,7 @@ services:
     volumes:
       - ./server:/Users/davidle/dev/tutorial/editor/server
     environment: *server-env
-    
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
