@@ -27,3 +27,4 @@ pydantic-ai
 pytest
 pytest-asyncio
 fastapi
+babel
