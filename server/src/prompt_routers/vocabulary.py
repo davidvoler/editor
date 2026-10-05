@@ -29,15 +29,16 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
                 model=prompt_request.model,
             )
             #save words
-            await save_words(
+            await save_words(lang=course.lang,
+                            to_lang=course.to_lang,
                 course_id=prompt_request.course_id,
                 module_id=prompt_request.module_id,
-                words=words_list.words_translations
+                words=words_list.words_translations,
             )
             response = PromptResponse(
                 action_type=PromptActionType.ASK_AI,
                 request_user_message=prompt_request.user_message,
-                results=words_list.to_dict(),
+                results=words_list.model_dump(),
                 course_id=prompt_request.course_id,
                 module_id=prompt_request.module_id,
                 lesson_id=prompt_request.lesson_id,

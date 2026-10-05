@@ -16,18 +16,21 @@ async def course_words(course_id:int, module_id:int|None = None) -> list[Word]:
     results = await get_query_results(query, params)
     return [Word(**row) for row in results]
 
-async def save_words(course_id:int, module_id:int|None = 0, words: list[WordTranslation] = []):
+async def save_words(lang:str, to_lang:str, course_id:int, module_id:int|None = 0, words: list[WordTranslation] = []):
+    
+    words_in_course = await course_words(course_id)
+    words_dict = {word.word: word.translation for word in words_in_course}
+    # insert only new words 
     query = """
-    INSERT INTO course_words (course_id, module_id, word, translation)
-    VALUES (%(course_id)s, %(module_id)s, %(word)s, %(translation)s)
-    ON CONFLICT (course_id, module_id, word) DO UPDATE SET translation = EXCLUDED.translation
+    INSERT INTO course.words (course_id, module_id,lang, to_lang, word, translation)
+    VALUES (%s,%s,%s,%s,%s,%s)
     """
     for word_translation in words:
-        params = {
-            "course_id": course_id,
-            "module_id": module_id,
-            "word": word_translation.word,
-            "translation": word_translation.translation
-        }
+        if word_translation.word in words_dict:
+            continue
+        params = (course_id, module_id,
+                  lang, to_lang,
+                  word_translation.word,
+                  word_translation.translation)
         await run_query(query, params)
 

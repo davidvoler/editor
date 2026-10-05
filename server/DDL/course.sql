@@ -164,5 +164,21 @@ create table course.prompt_context (
 );
 
 
+drop table if exists course.words;
+create table course.words (
+    word_id serial primary key,
+    lang varchar(12),
+    to_lang varchar(12),
+    course_id int,
+    module_id int,
+    word varchar(255),
+    translation varchar(255),
+    deleted boolean default false,
+    used boolean default false,
+    weight int2 DEFAULT 0 ,
+    created_at timestamp default now()
+);
+
+
 
 
