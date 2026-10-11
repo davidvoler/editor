@@ -19,7 +19,7 @@ async def get_last_responses(course_id: int, module_id: int = 0, limit: int = 50
         values = (course_id, module_id, limit)
     else:
         values = (course_id, limit)
-    return await run_query(sql, values)
+    return await get_query_results(sql, values)
 
 
 
@@ -29,32 +29,32 @@ async def save_prompt_response(prompt_response: PromptResponse)->int|None:
         course_id,
         module_id,
         lesson_id,
-        user_message,
-        provider,
-        model,
-        options,
         request_user_message,
+        options,
+        results,
+        results_type,
         ui_chat_response,
-        last_router_type,
-        last_action_type,
-        response
+        prompt_router_type,
+        prompt_type,
+        prompt_action_type
     ) VALUES (
-        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         RETURNING prompt_response_id
     """
+    def enum_value(e):
+        return e.value if e else None
     values = (
         prompt_response.course_id,
         prompt_response.module_id,
         prompt_response.lesson_id,
-        prompt_response.user_message,
-        prompt_response.provider,
-        prompt_response.model,
-        json.dumps(prompt_response.options),
         prompt_response.request_user_message,
-        prompt_response.ui_chat_response,
-        prompt_response.last_router_type,
-        prompt_response.last_action_type,
-        prompt_response.response,
+        json.dumps([o.model_dump(mode="json") for o in prompt_response.option or []]),
+        json.dumps(prompt_response.results or {}),
+        prompt_response.results_type,
+        json.dumps(prompt_response.ui_chat_response or {}),
+        enum_value(prompt_response.prompt_router_type),
+        enum_value(prompt_response.prompt_type),
+        enum_value(prompt_response.prompt_action_type),
     )
     res = await get_query_results(sql, values)
     return res[0]['prompt_response_id'] if res else None
@@ -66,7 +66,7 @@ async def save_prompt_request(prompt_request: PromptRequest) -> int|None:
         lesson_id,
         user_message,
         provider,
-        model,
+        model
     ) VALUES (
         %s,%s,%s,%s,%s,%s)
     RETURNING prompt_request_id

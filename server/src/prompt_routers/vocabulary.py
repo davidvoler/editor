@@ -36,14 +36,13 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
                 words=words_list.words_translations,
             )
             response = PromptResponse(
-                action_type=PromptActionType.ASK_AI,
                 request_user_message=prompt_request.user_message,
                 results=words_list.model_dump(),
+                prompt_action_type=PromptActionType.ASK_AI,
                 course_id=prompt_request.course_id,
                 module_id=prompt_request.module_id,
                 lesson_id=prompt_request.lesson_id,
                 prompt_type=prompt_request.prompt_type,
-                prompt_router_type=prompt_request.prompt_router_type,
                 is_option=prompt_request.is_option,
             )
             await save_prompt_response(response)

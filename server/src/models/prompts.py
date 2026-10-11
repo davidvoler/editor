@@ -65,21 +65,22 @@ class PromptRequest(BaseModel):
     last_prompt_type: PromptType|None = Field(None, description="The type of action associated with the last prompt request.")
     comment: str|None = Field('', description="Additional comments associated with the prompt request.")
     words: list[Word]|None = Field([], description="The list of words associated with the prompt request.")
+    is_option: bool = Field(False, description="Indicates whether this is an option.")
+
+
 
 
 class PromptOption(PromptRequest):
-    is_options: bool = Field(True, description="Indicates whether this is an option.")
+    is_option: bool = Field(False, description="Indicates whether this is an option.")
     option_text: str = Field("", description="The text of the option.")
     option_data: list[PromptOptionData]|None = Field(None, description="The data associated with the prompt option.")
 
 class PromptResponse(BaseModel):
-    #why do we need the full prompt request in the response?
-    #prompt_request: PromptRequest = Field(None, description="The original prompt request associated with this response.")
     request_user_message: str = Field('', description="The message input from the user in the original request.")
     course_id: int|None = Field(0, description="The ID of the course in the context.")
     module_id: int|None = Field(0, description="The ID of the module in the context.")
     lesson_id: int|None = Field(0, description="The ID of the lesson in the context.")
-    option: list[PromptOption]|None = Field(..., description="The option associated with this response, if applicable.")
+    option: list[PromptOption]|None = Field(None, description="The option associated with this response, if applicable.")
     task_id: str|None = Field('', description="The ID of the task associated with this response, if applicable.")
     results: dict|None = Field({}, description="The results associated with this response, if applicable.")
     results_type: str|None = Field('dict', description="The type of the results associated with this response, if applicable.")
