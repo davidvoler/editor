@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/chat_message.dart';
 import '../data/chat_responder.dart';
 import 'chat_options.dart';
+import 'chat_results.dart';
 import 'debug_dialog.dart';
 
 class ChatPanel extends StatefulWidget {
@@ -234,6 +235,7 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final debug = message.debug;
+    final results = message.results;
     final bubble = Flexible(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 340),
@@ -283,6 +285,11 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           row,
+          if (results != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: ChatResults(results: results),
+            ),
           if (message.options.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
