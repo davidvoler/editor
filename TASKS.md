@@ -53,7 +53,22 @@
 - [v] select words and translations 
     > Q: How? Decision: tap a word in the Words tab to edit its translation or remove it (PUT /words/word, soft delete). Removed words are not suggested again.
     > Note: extracting a part took ~3.5 min on muse-glimmer, so the chat now waits up to 10 minutes for a reply.
-## Feature Pack 3 - Words in module course 
+
+
+## Feature Pack 4 - Ui improve improvements
+- [] words panes - allow adding words manually - translation is optional
+- [] Lessons pane - 
+    - [] adding exercises manually
+    - [] Edit Exercise - you can correct any part of the exercise manually 
+    - [] Add options 
+    - [] delete options 
+    - [] correct sentences and correct translation
+
+
+
+
+
+## Feature Pack 20 - Words in module course 
 - [] Words appeared in sentences should be collected - suggest them as new words to learn
 - []  
 

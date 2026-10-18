@@ -1,3 +1,6 @@
+import asyncio
+from collections import defaultdict
+
 from models.context import PromptsContext
 from models.lesson import Lesson
 from models.module import Module
@@ -22,9 +25,19 @@ async def save_context(context: PromptsContext) -> PromptsContext:
         pc.words = await course_words(course_id=pc.course_id, module_id=pc.module_id)
     return pc
 
+# One lock per course: the course pane and the chat ask for a new course's context at
+# the same time, and without it each would create its own first module and lesson.
+_course_locks: defaultdict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+
 async def get_or_create_context(course_id: int, module_id: int = 0, lesson_id: int = 0) -> PromptsContext:
     if course_id == 0:
         return PromptsContext(course_id=0, module_id=0, lesson_id=0)
+    async with _course_locks[course_id]:
+        return await _get_or_create_context(course_id, module_id, lesson_id)
+
+
+async def _get_or_create_context(course_id: int, module_id: int, lesson_id: int) -> PromptsContext:
     # The last saved context of the course, or of the module when one is given.
     if module_id > 0:
         whr = "course_id = %s AND module_id = %s"
