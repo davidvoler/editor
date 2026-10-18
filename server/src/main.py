@@ -15,7 +15,7 @@ from routers import (
     course, exercise,
     lesson, module, video, 
     prompt, task_status,
-    context, languages,
+    context, languages, words,
 )
 
 
@@ -29,3 +29,4 @@ app.include_router(prompt.router, prefix="/api/v1/prompt", tags=["prompt"])
 app.include_router(task_status.router, prefix="/api/v1/tasks", tags=["tasks"])
 app.include_router(context.router, prefix="/api/v1/context", tags=["context"])
 app.include_router(languages.router, prefix="/api/v1/language", tags=["language"])
+app.include_router(words.router, prefix="/api/v1/words", tags=["words"])

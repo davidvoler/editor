@@ -157,21 +157,86 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
               _CourseFact(label: 'Lessons', value: '${course.lessons}'),
             ],
           ),
-          const SizedBox(height: 28),
-          const Text(
-            'MODULES',
-            style: TextStyle(
-              color: Color(0xFF9AA4A6),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
+          const SizedBox(height: 20),
+          Expanded(
+            child: DefaultTabController(
+              length: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const TabBar(
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    labelColor: Color(0xFF17252D),
+                    unselectedLabelColor: Color(0xFF8A979A),
+                    indicatorColor: Color(0xFF2B7771),
+                    tabs: [
+                      Tab(text: 'Modules'),
+                      Tab(text: 'Words'),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: TabBarView(
+                      children: [_buildModules(), _buildWords()],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          Expanded(child: _buildModules()),
         ],
       ),
     );
+  }
+
+  /// The context's module when the course has it, else the first module.
+  static int _currentModuleId(List<Module> modules, PromptsContext? current) =>
+      modules.any((m) => m.id == current?.moduleId)
+      ? current!.moduleId
+      : modules.first.id;
+
+  Widget _buildWords() {
+    final id = course.id;
+    if (id == null) return const _NoWords('Save the course to add words.');
+    final courseContext = ref.watch(courseContextProvider(id));
+    if (courseContext.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final modules = ref.watch(modulesProvider(id)).value;
+    if (modules == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (modules.isEmpty) return const _NoWords('Add a module to add words.');
+    final moduleId = _currentModuleId(modules, courseContext.value);
+    final module = modules.firstWhere((m) => m.id == moduleId);
+    final key = (courseId: id, moduleId: moduleId);
+    return ref
+        .watch(wordsProvider(key))
+        .when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Could not load the words.\n$error'),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => ref.invalidate(wordsProvider(key)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+          data: (words) => words.isEmpty
+              ? const _NoWords('No words in this module yet.')
+              : _WordList(
+                  moduleTitle: module.title.isEmpty
+                      ? 'Untitled module'
+                      : module.title,
+                  words: words,
+                ),
+        );
   }
 
   Widget _buildModules() {
@@ -203,11 +268,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
           ),
           data: (modules) {
             if (modules.isEmpty) return _EmptyModules(course: course);
-            // The context's module is current, else the first module.
-            final currentModuleId =
-                modules.any((m) => m.id == current?.moduleId)
-                ? current!.moduleId
-                : modules.first.id;
+            final currentModuleId = _currentModuleId(modules, current);
             return ListView.separated(
               itemCount: modules.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
@@ -384,6 +445,100 @@ class _LessonRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class _WordList extends StatelessWidget {
+  const _WordList({required this.moduleTitle, required this.words});
+
+  final String moduleTitle;
+  final List<Word> words;
+
+  @override
+  Widget build(BuildContext context) {
+    final used = words.where((word) => word.used).length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$moduleTitle  ·  ${words.length} words, $used used',
+          style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [for (final word in words) _WordChip(word: word)],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WordChip extends StatelessWidget {
+  const _WordChip({required this.word});
+
+  final Word word;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: word.used ? 'Already used' : 'Not used yet',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+        decoration: BoxDecoration(
+          color: word.used ? const Color(0xFFE3EAE5) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: word.used
+                ? const Color(0xFF2B7771)
+                : const Color(0xFFE4E0D9),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (word.used) ...[
+              const Icon(
+                Icons.check_rounded,
+                size: 15,
+                color: Color(0xFF2B7771),
+              ),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              word.text,
+              style: const TextStyle(color: Color(0xFF17252D), fontSize: 14),
+            ),
+            if (word.translation.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              Text(
+                word.translation,
+                style: const TextStyle(color: Color(0xFF8A979A), fontSize: 13),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoWords extends StatelessWidget {
+  const _NoWords(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Text(
+      message,
+      style: const TextStyle(color: Color(0xFF748087), fontSize: 14),
+    ),
+  );
 }
 
 class _EmptyModules extends StatelessWidget {
