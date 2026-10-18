@@ -60,7 +60,7 @@
 - [] words panes - allow adding words manually - translation is optional
 - [] Lessons pane - 
     - [v] adding exercises manually
-        > Q: One form or one per type? Decision: one dialog whose fields follow the type. Single/multiple choice: sentence, 4 options by default with a checkbox for each correct one (single choice allows exactly one), add/remove options, translation, explanation. True/false: statement + True/False. Explanation: one multi-line text. Fill in the blank: question with ___, answer, wrong options, translation.
+        > Q: One form or one per type? Decision: one dialog whose fields follow the type. Single/multiple choice: sentence, 4 options by default with a checkbox for each correct one (single choice allows exactly one), add/remove options, translation, explanation. True/false: statement + True/False. Explanation: one multi-line text. Fill in the blank: question with ___ and the same option rows with exactly one correct option (the word for the blank), translation, explanation.
         > Q: How are several correct options stored? Decision: options = {"correct": [...], "incorrect": [...]}, answer = the first correct option. Exercises without options.correct (the AI's) read their answer as the one correct option. True/false stores answer "true"/"false".
     - [] Edit Exercise - you can correct any part of the exercise manually 
     - [v] Add options 

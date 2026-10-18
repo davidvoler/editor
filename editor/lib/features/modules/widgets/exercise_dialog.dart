@@ -41,10 +41,6 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
   late final word = TextEditingController(text: widget.exercise.word);
   final wordFocus = FocusNode();
   late final question = TextEditingController(text: widget.exercise.question);
-  late final answer = TextEditingController(text: widget.exercise.answer);
-  late final incorrect = TextEditingController(
-    text: widget.exercise.incorrectOptions.join('\n'),
-  );
   late final translation = TextEditingController(
     text: widget.exercise.translation,
   );
@@ -57,7 +53,15 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
   /// Shown under the options when they are not valid.
   String? optionsError;
 
-  bool get isChoice => type == 'single_choice' || type == 'multiple_choice';
+  /// Types answered by picking from options.
+  bool get isChoice => const {
+    'single_choice',
+    'multiple_choice',
+    'fill_in_the_blank',
+  }.contains(type);
+
+  /// Choice types with exactly one correct option.
+  bool get hasOneCorrect => type != 'multiple_choice';
 
   List<_Option> _initialOptions() {
     final exercise = widget.exercise;
@@ -79,8 +83,6 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     for (final controller in [
       word,
       question,
-      answer,
-      incorrect,
       translation,
       explanation,
       for (final option in options) option.controller,
@@ -93,8 +95,8 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
 
   void _setCorrect(_Option option, bool correct) {
     setState(() {
-      // A single choice exercise has exactly one correct option.
-      if (type == 'single_choice' && correct) {
+      // Single choice and fill in the blank have exactly one correct option.
+      if (hasOneCorrect && correct) {
         for (final other in options) {
           other.correct = false;
         }
@@ -110,9 +112,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     final correct = filled.where((o) => o.correct).length;
     if (filled.length < 2) return 'Add at least 2 options.';
     if (correct == 0) return 'Mark the correct option.';
-    if (type == 'single_choice' && correct > 1) {
-      return 'A single choice exercise has one correct option.';
-    }
+    if (hasOneCorrect && correct > 1) return 'Mark only one correct option.';
     return null;
   }
 
@@ -121,10 +121,6 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     setState(() => optionsError = isChoice ? _validateOptions() : null);
     if (!formValid || optionsError != null) return;
     final current = widget.exercise;
-    List<String> lines(String text) => [
-      for (final line in text.split('\n'))
-        if (line.trim().isNotEmpty) line.trim(),
-    ];
     final filled = [
       for (final option in options)
         if (option.controller.text.trim().isNotEmpty) option,
@@ -135,7 +131,14 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
       List<String> correct,
       List<String> wrong,
     ) = switch (type) {
-      'single_choice' || 'multiple_choice' => (
+      'true_false' => (
+        question.text.trim(),
+        '$statementIsTrue',
+        ['$statementIsTrue'],
+        ['${!statementIsTrue}'],
+      ),
+      'explanation' => ('', '', <String>[], <String>[]),
+      _ => (
         question.text.trim(),
         filled.firstWhere((o) => o.correct).controller.text.trim(),
         [
@@ -146,19 +149,6 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
           for (final o in filled)
             if (!o.correct) o.controller.text.trim(),
         ],
-      ),
-      'true_false' => (
-        question.text.trim(),
-        '$statementIsTrue',
-        ['$statementIsTrue'],
-        ['${!statementIsTrue}'],
-      ),
-      'explanation' => ('', '', <String>[], <String>[]),
-      _ => (
-        question.text.trim(),
-        answer.text.trim(),
-        [answer.text.trim()],
-        lines(incorrect.text),
       ),
     };
     Navigator.of(context).pop(
@@ -224,7 +214,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
                       onChanged: (value) => setState(() {
                         type = value!;
                         optionsError = null;
-                        if (type == 'single_choice') _keepOneCorrect();
+                        if (hasOneCorrect) _keepOneCorrect();
                       }),
                     ),
                   ),
@@ -256,7 +246,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     );
   }
 
-  /// Switching to single choice keeps only the first correct option.
+  /// Switching to a one-correct type keeps only the first correct option.
   void _keepOneCorrect() {
     var seen = false;
     for (final option in options) {
@@ -273,29 +263,6 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
       decoration: const InputDecoration(labelText: 'Translation'),
     );
     switch (type) {
-      case 'single_choice' || 'multiple_choice':
-        return [
-          TextFormField(
-            controller: question,
-            autofocus: isNew,
-            maxLines: null,
-            validator: _required,
-            decoration: const InputDecoration(
-              labelText: 'Sentence',
-              hintText: 'A sentence that uses the word',
-            ),
-          ),
-          gap,
-          ..._buildOptions(),
-          gap,
-          translationField,
-          gap,
-          TextFormField(
-            controller: explanation,
-            maxLines: null,
-            decoration: const InputDecoration(labelText: 'Explanation'),
-          ),
-        ];
       case 'true_false':
         return [
           TextFormField(
@@ -339,35 +306,30 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
           ),
         ];
       default:
+        final blank = type == 'fill_in_the_blank';
         return [
           TextFormField(
             controller: question,
             autofocus: isNew,
             maxLines: null,
             validator: _required,
-            decoration: const InputDecoration(
-              labelText: 'Question',
-              hintText: 'Use ___ for the blank',
+            decoration: InputDecoration(
+              labelText: blank ? 'Question' : 'Sentence',
+              hintText: blank
+                  ? 'Use ___ for the blank'
+                  : 'A sentence that uses the word',
             ),
           ),
           gap,
-          TextFormField(
-            controller: answer,
-            validator: _required,
-            decoration: const InputDecoration(labelText: 'Answer'),
-          ),
-          gap,
-          TextFormField(
-            controller: incorrect,
-            minLines: 2,
-            maxLines: null,
-            decoration: const InputDecoration(
-              labelText: 'Wrong options',
-              hintText: 'One per line',
-            ),
-          ),
+          ..._buildOptions(),
           gap,
           translationField,
+          gap,
+          TextFormField(
+            controller: explanation,
+            maxLines: null,
+            decoration: const InputDecoration(labelText: 'Explanation'),
+          ),
         ];
     }
   }
@@ -375,7 +337,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
   /// Option rows with a checkbox marking the correct ones.
   List<Widget> _buildOptions() => [
     Text(
-      type == 'single_choice'
+      hasOneCorrect
           ? 'Options · check the correct one'
           : 'Options · check every correct one',
       style: const TextStyle(color: Color(0xFF748087), fontSize: 13),

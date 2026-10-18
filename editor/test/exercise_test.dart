@@ -127,6 +127,43 @@ void main() {
     expect(result()?.incorrectOptions, ['pane']);
   });
 
+  testWidgets('fill in the blank picks one correct option for the blank', (
+    tester,
+  ) async {
+    final result = await openForm(tester);
+    await pickType(tester, 'Fill in the blank');
+    expect(find.text('Use ___ for the blank'), findsOneWidget);
+    expect(find.byType(Checkbox), findsNWidgets(4));
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Question'),
+      'Torno a ___ stasera.',
+    );
+    await tester.enterText(optionField(1), 'casa');
+    await tester.enterText(optionField(2), 'scuola');
+    await tester.enterText(optionField(3), 'lavoro');
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.tap(find.byType(Checkbox).at(2));
+    await tester.pumpAndSettle();
+    // Only one option stays correct.
+    expect(
+      tester
+          .widgetList<Checkbox>(find.byType(Checkbox))
+          .map((c) => c.value)
+          .toList(),
+      [false, false, true, false],
+    );
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(result()?.type, 'fill_in_the_blank');
+    expect(result()?.question, 'Torno a ___ stasera.');
+    expect(result()?.answer, 'casa');
+    expect(result()?.correctOptions, ['casa']);
+    expect(result()?.incorrectOptions, ['scuola', 'lavoro']);
+  });
+
   testWidgets('true/false has a statement and a true or false answer', (
     tester,
   ) async {
