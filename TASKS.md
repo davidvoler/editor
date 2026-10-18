@@ -25,19 +25,34 @@
     > Q: Which fields does the form edit? Decision: type, word, question, answer, wrong options (options = {"incorrect": [...]}, like the AI SingleChoice shape), translation (sentence_alt1), explanation.
 - [v] manual add exercise
 ##  Feature Pack 3 - Prompt context
-- [] The prompt options should know the current course/module context
-    - [] No words - suggest words
-    - [] No exercise - suggest create exercise for words 
-    - [] too many exercise for the current lesson - create the next lesson
-    - [] too many lessons per module - suggest creating the next module, move words from current module to the next one    
+- [v] The prompt options should know the current course/module context
+    > Q: Where are options computed and when are they shown? Decision: the server computes them from the course's last saved context (GET /prompt/default_options, utils/context_options.py); the chat shows them at start and after every reply that has no options of its own. Unrecognised typed messages also get them.
+    > Q: Thresholds? Decision: 10 exercises per lesson, 5 lessons per module, 5 words per exercise request (constants in utils/context_options.py).
+    > Q: Offer one option or all that apply? Decision: the most specific step only (next module > next lesson > create exercises), plus "Suggest (more) words" when there are no unused words.
+    - [v] No words - suggest words
+    - [v] No exercise - suggest create exercise for words 
+        > Q: How are exercises created? Decision: one AI call writes a single-choice question (sentence with ___, 3 wrong options, translation) for up to 5 unused words; answer = the word; saved in the current lesson, which marks the words used.
+    - [v] too many exercise for the current lesson - create the next lesson
+        > Q: What happens after creating it? Decision: "Lesson N+1" is added and becomes the current context, so new exercises go there.
+    - [v] too many lessons per module - suggest creating the next module, move words from current module to the next one    
+        > Q: Which words move? Decision: only words no exercise uses yet; used words stay with their module. The new "Module N+1" gets "Lesson 1" and becomes the current context.
 ## Feature Pack 3 - Video
-- [] When the prompt contains a video url
-    - [] start a video module 
-    - [] suggest braking the video into 10 parts each 3 minutes length,  20 parts each 2 minutes length
-    - [] extract words 
-    - [] extract parts 
-- [] generate exercises 
-- [] select words and translations 
+- [v] When the prompt contains a video url
+    > Q: How is a video link recognised? Decision: any YouTube URL in a typed chat message routes to the video router (main_router), whatever else the message says.
+    > Q: Which subtitles? Decision: the course's learning language only; if missing, the reply lists the languages the video has.
+    - [v] start a video module 
+        > Q: Module title and storage? Decision: titled after the video (YouTube oEmbed), subtitles stored in course.video.raw_subtitles; the module becomes the current context with no lesson until it is split.
+    - [v] suggest braking the video into 10 parts each 3 minutes length,  20 parts each 2 minutes length
+        > Q: Fixed 10/20 parts? Decision: offer 3-minute and 2-minute parts, with the part count computed from the video's length. Each part becomes a lesson ("Part 1 (0:00-3:02)") whose description holds the part's subtitles; parts end on subtitle boundaries.
+    - [v] extract words 
+        > Q: Whole video or per part? Decision: one AI call per part ("Extract words and sentences from Part N"), up to 15 words with translations, saved to the module; the part's lesson.words records them and marks the part done.
+    - [v] extract parts 
+        > Q: What are "parts" here? Decision: cleaned-up sentences with translations (up to 10 per part), saved to course.sentences with the part's lesson_id, in the same AI call as the words.
+- [v] generate exercises 
+    > Q: New flow for video? Decision: reuse "Create exercises for N unused words"; extracting a part makes it the current lesson, so its exercises go into that part. Video modules never get "next lesson"/"next module" options.
+- [v] select words and translations 
+    > Q: How? Decision: tap a word in the Words tab to edit its translation or remove it (PUT /words/word, soft delete). Removed words are not suggested again.
+    > Note: extracting a part took ~3.5 min on muse-glimmer, so the chat now waits up to 10 minutes for a reply.
 ## Feature Pack 3 - Words in module course 
 - [] Words appeared in sentences should be collected - suggest them as new words to learn
 - []  

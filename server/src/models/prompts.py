@@ -42,6 +42,8 @@ class PromptType(Enum):
     MODULE_CREATE_SUGGEST_WORDS = "create_module_suggest_words"
     VIDEO_SECTIONS = "video_sections"
     VIDEO_PARTS = "video_parts"
+    VIDEO_MODULE = "video_module"  # start a module from a video URL
+    VIDEO_EXTRACT = "video_extract"  # extract words and sentences from the next part
     VOCABULARY_SUGGEST_WORDS = "vocabulary_suggest_words"
 
 

@@ -4,6 +4,7 @@ from models.module import Module
 from utils.db import get_query_results
 from utils.lesson_utils import create_lesson, get_module_lessons
 from utils.module_utils import create_module, get_course_modules
+from utils.video_utils import get_module_video
 from utils.words_utils import course_words
 
 async def save_context(context: PromptsContext) -> PromptsContext:
@@ -52,6 +53,10 @@ async def get_or_create_context(course_id: int, module_id: int = 0, lesson_id: i
         pc.module_id = module.module_id
     if pc.lesson_id == 0:
         lessons = await get_module_lessons(pc.module_id)
+        if not lessons and await get_module_video(pc.module_id):
+            # A video module gets its lessons when the video is split into parts.
+            pc.words = await course_words(course_id=pc.course_id, module_id=pc.module_id)
+            return pc
         lesson = lessons[0] if lessons else await create_lesson(
             Lesson(course_id=pc.course_id, module_id=pc.module_id, title="Lesson 1")
         )

@@ -1,4 +1,9 @@
-from utils.module_utils import create_module
+from models.context import PromptsContext
+from prompt_routers.lesson import create_next_lesson
+from utils.context_options import context_options
+from utils.context_utils import get_or_create_context, save_context
+from utils.module_utils import create_module, get_course_modules
+from utils.words_utils import move_unused_words
 from models.module import Module
 from models.lesson import Lesson
 from models.prompts import (
@@ -12,62 +17,50 @@ from models.prompts import (
 from prompt_routers.vocabulary import handle_prompt_vocabulary_request
 from utils.lesson_utils import create_lesson
 
-from utils.prompt_utils import save_prompt_request
+from utils.prompt_utils import save_prompt_request, save_prompt_response
 async def _identify_prompt_type(prompt_request: PromptRequest) -> PromptType:
     # Implement the logic to identify the prompt type based on the user message and context
     return prompt_request.prompt_type
 
-async def _create_lesson(prompt_request: PromptRequest) -> Lesson:
-    l = Lesson(
-        course_id=prompt_request.course_id,
-        module_id=prompt_request.module_id,
-        title="Lesson 1",  # Replace with actual value from prompt_request
-        content="Example lesson content",  # Replace with actual value from prompt_request
-        status="draft"  # Replace with actual value from prompt_request
+async def _create_next_module(prompt_request: PromptRequest) -> PromptResponse:
+    """Adds "Module N" with a first lesson, moves the current module's unused words
+    into it and makes it the current context."""
+    context = await get_or_create_context(prompt_request.course_id)
+    count = len(await get_course_modules(context.course_id))
+    module = await create_module(Module(
+        course_id=context.course_id, title=f"Module {count + 1}", weight=count,
+    ))
+    moved = await move_unused_words(context.module_id, module.module_id)
+    lesson = await create_next_lesson(context.course_id, module.module_id)
+    response = PromptResponse(
+        request_user_message=prompt_request.user_message,
+        course_id=module.course_id, module_id=module.module_id, lesson_id=lesson.lesson_id,
+        ui_chat_response={"message": f"Created {module.title} with {lesson.title} and moved {moved} unused words to it."},
+        prompt_router_type=PromptRouterType.MODULE,
+        prompt_type=PromptType.MODULE_CREATE,
+        prompt_action_type=PromptActionType.SIMPLE,
     )
-    return await create_lesson(l)
-
-async def _get_options(prompt_request: PromptRequest) -> list[PromptOption]:
-    # Implement the logic to get options based on the prompt request
-    if not prompt_request.lesson_id:
-            lesson = await _create_lesson(prompt_request)
-            prompt_request.lesson_id = lesson.lesson_id
-    
-    #do we have sufficient words 
-    words = ["word1", "word2", "word3"]
-    return [
-        PromptOption(
-            option_text=f"Create exercises for words: {words}",
-            prompt_router_type=PromptRouterType.EXERCISE,
-            prompt_type=PromptType.EXERCISE,
-        ),
-        
-    ] 
+    await save_prompt_response(response)
+    return response
 
 
 async def suggest_options(prompt_request: PromptRequest) -> PromptResponse:
-    # Implement the logic to suggest options to the user based on the prompt request
     return PromptResponse(
         request_user_message=prompt_request.user_message,
         course_id=prompt_request.course_id,
         module_id=prompt_request.module_id,
         lesson_id=prompt_request.lesson_id,
-        option=await _get_options(prompt_request),
+        option=await context_options(prompt_request.course_id),
+        ui_chat_response={"message": "What would you like to do next?"},
         prompt_router_type=PromptRouterType.MODULE,
-        prompt_type=PromptType.MODULE_CREATE,
-        prompt_action_type=PromptActionType.SIMPLE,
-        is_option=prompt_request.is_options
+        prompt_action_type=PromptActionType.OPTIONS,
     )
 
 async def _create_module(prompt_request: PromptRequest) -> Module:
-    print(f"---Creating module with prompt request---")
-    m = Module(
-        course_id=prompt_request.course_id,
-        title="Module 1",  # Replace with actual value from prompt_request
-        description="Example module",  # Replace with actual value from prompt_request
-        status="draft"  # Replace with actual value from prompt_request
-    )
-    return await create_module(m)
+    count = len(await get_course_modules(prompt_request.course_id))
+    return await create_module(Module(
+        course_id=prompt_request.course_id, title=f"Module {count + 1}", weight=count,
+    ))
 
 
 
@@ -75,18 +68,7 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
     # Implement the logic to process the prompt request based on the identified prompt type
     match(prompt_type):
         case PromptType.MODULE_CREATE:
-            print(f"---Processing MODULE_CREATE prompt request---")
-            m = await _create_module(prompt_request)
-            return PromptResponse(
-                course_id=m.course_id,
-                module_id=m.module_id,
-                prompt_router_type=PromptRouterType.MODULE,
-                prompt_type=PromptType.MODULE_CREATE,
-                prompt_action_type=PromptActionType.SIMPLE,
-                option=await _get_options(prompt_request),
-                ui_chat_response=f"Module '{m.title}' created successfully.",
-                is_option=prompt_request.is_options
-            )
+            return await _create_next_module(prompt_request)
         case PromptType.MODULE_CREATE_SUGGEST_WORDS:
             # Handle module create suggest words logic
             m = await _create_module(prompt_request)
@@ -94,7 +76,7 @@ async def _process_prompt_request(prompt_request: PromptRequest, prompt_type: Pr
             prompt_request.router_type = PromptRouterType.VOCABULARY
             prompt_request.prompt_type = PromptType.VOCABULARY_SUGGEST_WORDS
             return await handle_prompt_vocabulary_request(prompt_request)
-        case PromptType.MODULE_ATTRIBUTES:
+        case PromptType.MODULE_ATTRIBUTE:
             # Handle module attributes logic
             pass
         case _:

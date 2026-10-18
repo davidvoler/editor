@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from prompts.providers import get_provider
+from utils.ai_utils import get_ai_model
 
 class SingleChoice(BaseModel):
     sentence: str = Field(description="The target sentence containing a blank or question context.")
@@ -21,4 +22,32 @@ async def get_single_choice(
         output_type=SingleChoiceList,
         system_prompt="You are an expert language teacher.",)
     result = await agent.run(f"Create {num_sentences} questions for the word: {word}")
+    return result.output
+
+class WordExercise(BaseModel):
+    word: str = Field(description="The word from the given list that this question practises, spelled exactly as given.")
+    sentence: str = Field(description="A short sentence in the learned language with ___ where the word goes.")
+    incorrect_options: list[str] = Field(description="3 plausible but incorrect words for the blank.")
+    translation: str = Field(description="Translation of the full sentence, with the word filled in, in the student's language.")
+
+class WordExerciseList(BaseModel):
+    exercises: list[WordExercise] = Field(description="One question per given word.")
+
+async def get_single_choice_for_words(
+    words: list[str],
+    lang: str,
+    to_lang: str,
+    level: str,
+    provider: str = "ollama",
+    model: str = "llama3.1") -> WordExerciseList:
+    """One fill-the-blank single-choice question per word, in one AI call."""
+    agent = Agent(
+        get_ai_model(provider, model),
+        output_type=WordExerciseList,
+        system_prompt=f"You are an expert {lang} language teacher writing exercises for {level} learners who speak {to_lang}.",
+    )
+    result = await agent.run(
+        f"Write one single-choice question for each of these {lang} words: {', '.join(words)}. "
+        f"Each question is a short {lang} sentence with ___ in place of the word."
+    )
     return result.output

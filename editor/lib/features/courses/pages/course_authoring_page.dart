@@ -289,6 +289,8 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
           data: (words) => words.isEmpty
               ? const _NoWords('No words in this module yet.')
               : _WordList(
+                  courseId: id,
+                  moduleId: moduleId,
                   moduleTitle: module.title.isEmpty
                       ? 'Untitled module'
                       : module.title,
@@ -626,6 +628,10 @@ class _LessonExercises extends ConsumerWidget {
             ),
           ],
         ),
+        if (lesson.description.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _PartText(text: lesson.description),
+        ],
         const SizedBox(height: 14),
         Expanded(
           child: exercises.isEmpty
@@ -737,14 +743,103 @@ class _ExerciseCard extends StatelessWidget {
   }
 }
 
-class _WordList extends StatelessWidget {
-  const _WordList({required this.moduleTitle, required this.words});
+/// A video part's subtitles, collapsed to a few lines until expanded.
+class _PartText extends StatefulWidget {
+  const _PartText({required this.text});
 
-  final String moduleTitle;
-  final List<Word> words;
+  final String text;
+
+  @override
+  State<_PartText> createState() => _PartTextState();
+}
+
+class _PartTextState extends State<_PartText> {
+  bool expanded = false;
 
   @override
   Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => setState(() => expanded = !expanded),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFBF8F3),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE4E0D9)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.text,
+              maxLines: expanded ? null : 3,
+              overflow: expanded ? null : TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF17252D),
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              expanded ? 'Show less' : 'Show the whole part',
+              style: const TextStyle(
+                color: Color(0xFF2B7771),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The module's words; tapping one edits its translation or removes it.
+class _WordList extends ConsumerWidget {
+  const _WordList({
+    required this.courseId,
+    required this.moduleId,
+    required this.moduleTitle,
+    required this.words,
+  });
+
+  final int courseId;
+  final int moduleId;
+  final String moduleTitle;
+  final List<Word> words;
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, Word word) async {
+    final change = await showDialog<_WordChange>(
+      context: context,
+      builder: (_) => _WordDialog(word: word),
+    );
+    if (change == null || !context.mounted) return;
+    try {
+      await ref
+          .read(modulesRepositoryProvider)
+          .updateWord(
+            courseId: courseId,
+            moduleId: moduleId,
+            text: word.text,
+            translation: change.translation,
+            deleted: change.remove,
+          );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not change the word.\n$error')),
+      );
+      return;
+    }
+    ref.invalidate(wordsProvider((courseId: courseId, moduleId: moduleId)));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final used = words.where((word) => word.used).length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,7 +854,10 @@ class _WordList extends StatelessWidget {
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: [for (final word in words) _WordChip(word: word)],
+              children: [
+                for (final word in words)
+                  _WordChip(word: word, onTap: () => _edit(context, ref, word)),
+              ],
             ),
           ),
         ),
@@ -768,49 +866,117 @@ class _WordList extends StatelessWidget {
   }
 }
 
-class _WordChip extends StatelessWidget {
-  const _WordChip({required this.word});
+/// What the word dialog asks for: a new translation, or removing the word.
+class _WordChange {
+  const _WordChange({this.translation, this.remove = false});
+
+  final String? translation;
+  final bool remove;
+}
+
+class _WordDialog extends StatefulWidget {
+  const _WordDialog({required this.word});
 
   final Word word;
 
   @override
+  State<_WordDialog> createState() => _WordDialogState();
+}
+
+class _WordDialogState extends State<_WordDialog> {
+  late final translation = TextEditingController(text: widget.word.translation);
+
+  @override
+  void dispose() {
+    translation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.word.text),
+      content: TextField(
+        controller: translation,
+        autofocus: true,
+        decoration: const InputDecoration(labelText: 'Translation'),
+        onSubmitted: (value) =>
+            Navigator.of(context).pop(_WordChange(translation: value.trim())),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context).pop(const _WordChange(remove: true)),
+          child: const Text('Remove word'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(
+            context,
+          ).pop(_WordChange(translation: translation.text.trim())),
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _WordChip extends StatelessWidget {
+  const _WordChip({required this.word, required this.onTap});
+
+  final Word word;
+  final VoidCallback onTap;
+
+  @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: word.used ? 'Already used' : 'Not used yet',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        decoration: BoxDecoration(
-          color: word.used ? const Color(0xFFE3EAE5) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: word.used
-                ? const Color(0xFF2B7771)
-                : const Color(0xFFE4E0D9),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (word.used) ...[
-              const Icon(
-                Icons.check_rounded,
-                size: 15,
-                color: Color(0xFF2B7771),
-              ),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              word.text,
-              style: const TextStyle(color: Color(0xFF17252D), fontSize: 14),
+      message: word.used
+          ? 'Already used · tap to edit'
+          : 'Not used yet · tap to edit',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          decoration: BoxDecoration(
+            color: word.used ? const Color(0xFFE3EAE5) : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: word.used
+                  ? const Color(0xFF2B7771)
+                  : const Color(0xFFE4E0D9),
             ),
-            if (word.translation.isNotEmpty) ...[
-              const SizedBox(width: 6),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (word.used) ...[
+                const Icon(
+                  Icons.check_rounded,
+                  size: 15,
+                  color: Color(0xFF2B7771),
+                ),
+                const SizedBox(width: 5),
+              ],
               Text(
-                word.translation,
-                style: const TextStyle(color: Color(0xFF8A979A), fontSize: 13),
+                word.text,
+                style: const TextStyle(color: Color(0xFF17252D), fontSize: 14),
               ),
+              if (word.translation.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text(
+                  word.translation,
+                  style: const TextStyle(
+                    color: Color(0xFF8A979A),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

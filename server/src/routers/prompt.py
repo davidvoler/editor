@@ -4,7 +4,7 @@ from models.context import PromptsContext
 from models.tasks import TasksResultsRequest
 from tasks.prompt_tasks import handle_prompt_task
 from utils.prompt_utils import get_last_responses
-from prompt_routers.course import default_course_options
+from utils.context_options import context_options
 from utils.context_utils import get_or_create_context
 
 router = APIRouter()
@@ -22,7 +22,8 @@ async def _handle_prompt_history(course_id:int, module_id:int = 0, limit:int = 2
 
 @router.get("/default_options", response_model=list[PromptOption])
 async def _default_options(course_id:int)->list[PromptOption]:
-    return default_course_options(course_id)
+    """The next steps for the course's current module and lesson."""
+    return await context_options(course_id)
 
 
 @router.post("/context", response_model=PromptsContext)

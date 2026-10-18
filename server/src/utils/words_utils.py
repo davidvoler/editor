@@ -21,7 +21,9 @@ async def course_words(course_id:int, module_id:int|None = None) -> list[Word]:
 
 async def save_words(lang:str, to_lang:str, course_id:int, module_id:int|None = 0, words: list[WordTranslation] = []):
     
-    known_words = {word.text for word in await course_words(course_id)}
+    # Removed words count as known, so they are not suggested again.
+    rows = await get_query_results("SELECT DISTINCT word FROM course.words WHERE course_id = %s", (course_id,))
+    known_words = {row["word"] for row in rows}
     # insert only new words 
     query = """
     INSERT INTO course.words (course_id, module_id,lang, to_lang, word, translation)
@@ -37,3 +39,27 @@ async def save_words(lang:str, to_lang:str, course_id:int, module_id:int|None = 
                   word_translation.translation)
         await run_query(query, params)
 
+
+
+async def move_unused_words(from_module_id: int, to_module_id: int) -> int:
+    """Moves the words no exercise uses yet to another module; returns how many words moved."""
+    query = """
+    UPDATE course.words SET module_id = %s
+    WHERE module_id = %s AND deleted IS NOT TRUE
+      AND word NOT IN (SELECT word FROM course.words WHERE module_id = %s AND used)
+    RETURNING word
+    """
+    rows = await get_query_results(query, (to_module_id, from_module_id, from_module_id))
+    return len({row["word"] for row in rows})
+
+
+async def update_word(course_id: int, module_id: int, text: str, translation: str | None = None,
+                      deleted: bool = False) -> int:
+    """Changes a module word's translation, or removes it; returns how many rows changed."""
+    query = """
+    UPDATE course.words SET translation = COALESCE(%s, translation), deleted = %s
+    WHERE course_id = %s AND module_id = %s AND word = %s AND deleted IS NOT TRUE
+    RETURNING word_id
+    """
+    rows = await get_query_results(query, (translation, deleted, course_id, module_id, text))
+    return len(rows)
