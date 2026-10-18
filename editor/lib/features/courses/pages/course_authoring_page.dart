@@ -6,6 +6,7 @@ import '../../chat/data/prompt_router_responder.dart';
 import '../../chat/widgets/chat_panel.dart';
 import '../../modules/data/module.dart';
 import '../../modules/pages/module_editing_page.dart';
+import '../../modules/widgets/exercise_dialog.dart';
 import '../data/course.dart';
 import '../data/prompts_context.dart';
 
@@ -160,7 +161,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
           const SizedBox(height: 20),
           Expanded(
             child: DefaultTabController(
-              length: 2,
+              length: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -173,12 +174,17 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                     tabs: [
                       Tab(text: 'Modules'),
                       Tab(text: 'Words'),
+                      Tab(text: 'Lesson'),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: TabBarView(
-                      children: [_buildModules(), _buildWords()],
+                      children: [
+                        _buildModules(),
+                        _buildWords(),
+                        _buildLesson(),
+                      ],
                     ),
                   ),
                 ],
@@ -195,6 +201,58 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
       modules.any((m) => m.id == current?.moduleId)
       ? current!.moduleId
       : modules.first.id;
+
+  /// The current module and the course context, once both are loaded.
+  ({int courseId, Module module, PromptsContext? context})? _current() {
+    final id = course.id;
+    if (id == null) return null;
+    final courseContext = ref.watch(courseContextProvider(id));
+    final modules = ref.watch(modulesProvider(id)).value;
+    if (courseContext.isLoading || modules == null || modules.isEmpty) {
+      return null;
+    }
+    final moduleId = _currentModuleId(modules, courseContext.value);
+    return (
+      courseId: id,
+      module: modules.firstWhere((m) => m.id == moduleId),
+      context: courseContext.value,
+    );
+  }
+
+  Widget _buildLesson() {
+    if (course.id == null) {
+      return const _NoWords('Save the course to add lessons.');
+    }
+    final current = _current();
+    if (current == null) {
+      return ref.watch(modulesProvider(course.id!)).value?.isEmpty ?? false
+          ? const _NoWords('Add a module to add lessons.')
+          : const Center(child: CircularProgressIndicator());
+    }
+    final module = current.module;
+    return ref
+        .watch(lessonsProvider(module.id))
+        .when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) =>
+              Center(child: Text('Could not load the lessons.\n$error')),
+          data: (lessons) {
+            if (lessons.isEmpty) {
+              return const _NoWords('This module has no lessons yet.');
+            }
+            // The context's lesson when it is in this module, else the first.
+            final lesson = lessons.firstWhere(
+              (lesson) => lesson.id == current.context?.lessonId,
+              orElse: () => lessons.first,
+            );
+            return _LessonExercises(
+              courseId: current.courseId,
+              module: module,
+              lesson: lesson,
+            );
+          },
+        );
+  }
 
   Widget _buildWords() {
     final id = course.id;
@@ -441,6 +499,238 @@ class _LessonRow extends StatelessWidget {
                 style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The exercises of a lesson, with adding, editing and deleting.
+class _LessonExercises extends ConsumerWidget {
+  const _LessonExercises({
+    required this.courseId,
+    required this.module,
+    required this.lesson,
+  });
+
+  final int courseId;
+  final Module module;
+  final Lesson lesson;
+
+  /// Opens the exercise form and saves the result.
+  Future<void> _edit(
+    BuildContext context,
+    WidgetRef ref,
+    Exercise exercise,
+  ) async {
+    final words =
+        ref
+            .read(wordsProvider((courseId: courseId, moduleId: module.id)))
+            .value ??
+        const <Word>[];
+    final edited = await showDialog<Exercise>(
+      context: context,
+      builder: (_) => ExerciseDialog(exercise: exercise, words: words),
+    );
+    if (edited == null || !context.mounted) return;
+    await _run(
+      context,
+      ref,
+      () => ref.read(exercisesRepositoryProvider).save(edited),
+      'save',
+    );
+  }
+
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    Exercise exercise,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete exercise?'),
+        content: Text(
+          exercise.question.isEmpty ? 'This exercise' : exercise.question,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await _run(
+      context,
+      ref,
+      () => ref.read(exercisesRepositoryProvider).delete(exercise.id!),
+      'delete',
+    );
+  }
+
+  /// Runs a change and reloads the lessons and words, since saving or
+  /// deleting an exercise changes which words are used.
+  Future<void> _run(
+    BuildContext context,
+    WidgetRef ref,
+    Future<Object?> Function() change,
+    String verb,
+  ) async {
+    try {
+      await change();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not $verb the exercise.\n$error')),
+      );
+      return;
+    }
+    ref.invalidate(lessonsProvider(module.id));
+    ref.invalidate(wordsProvider((courseId: courseId, moduleId: module.id)));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final exercises = lesson.exercises;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${module.title.isEmpty ? 'Untitled module' : module.title}'
+                '  ·  ${lesson.title.isEmpty ? 'Untitled lesson' : lesson.title}'
+                '  ·  ${exercises.length} exercises',
+                style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: () => _edit(
+                context,
+                ref,
+                Exercise(
+                  courseId: courseId,
+                  moduleId: module.id,
+                  lessonId: lesson.id,
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 19),
+              label: const Text('Add exercise'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Expanded(
+          child: exercises.isEmpty
+              ? const _NoWords('No exercises in this lesson yet.')
+              : ListView.separated(
+                  itemCount: exercises.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final exercise = exercises[index];
+                    return _ExerciseCard(
+                      exercise: exercise,
+                      onEdit: () => _edit(context, ref, exercise),
+                      onDelete: () => _delete(context, ref, exercise),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExerciseCard extends StatelessWidget {
+  const _ExerciseCard({
+    required this.exercise,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Exercise exercise;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    const muted = TextStyle(color: Color(0xFF748087), fontSize: 13);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 6, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE4E0D9)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  [
+                    exerciseTypes[exercise.type] ?? exercise.type,
+                    if (exercise.word.isNotEmpty) exercise.word,
+                  ].join('  ·  ').toUpperCase(),
+                  style: const TextStyle(
+                    color: Color(0xFF9AA4A6),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  exercise.question,
+                  style: const TextStyle(
+                    color: Color(0xFF17252D),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: exercise.answer,
+                        style: const TextStyle(
+                          color: Color(0xFF2B7771),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      for (final option in exercise.incorrectOptions)
+                        TextSpan(text: '   $option'),
+                    ],
+                  ),
+                  style: muted,
+                ),
+                if (exercise.translation.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(exercise.translation, style: muted),
+                ],
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Edit exercise',
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, size: 19),
+          ),
+          IconButton(
+            tooltip: 'Delete exercise',
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline_rounded, size: 19),
+          ),
         ],
       ),
     );

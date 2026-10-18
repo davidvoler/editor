@@ -16,10 +16,14 @@
 ### Tasks, API and full process 
 - [v] verify that the process works for an example action
 ##  Feature Pack 2 - Course editor pane 
-- [] lesson page with exercvises
-- [] words for this module mark used 
-- [] manual editing of exercise
-- [] manual add exercise
+- [v] words pane - load words from current modulw/course 
+- [v] lesson page with exercises
+    > Q: Separate page or a tab in the course pane? Decision: a "Lesson" tab next to Modules/Words, showing the context's lesson (else the module's first lesson).
+- [v] words for this module mark used 
+    > Q: How is a word "used"? Decision: new column course.exercise.word; saving/deleting an exercise recalculates course.words.used for its module (used = some exercise in the module practises the word).
+- [v] manual editing of exercise
+    > Q: Which fields does the form edit? Decision: type, word, question, answer, wrong options (options = {"incorrect": [...]}, like the AI SingleChoice shape), translation (sentence_alt1), explanation.
+- [v] manual add exercise
 ##  Feature Pack 3 - Prompt context
 - [] The prompt options should know the current course/module context
     - [] No words - suggest words

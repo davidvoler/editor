@@ -28,6 +28,7 @@ async def update_exercise_endpoint(exercise: Exercise) -> Exercise:
     return await update_exercise(exercise)
 
 @router.delete("/exercise")
-async def delete_exercise_endpoint(exercise: Exercise):
-    """Deletes an exercise"""
-    return await delete_exercise(exercise)
+async def delete_exercise_endpoint(exercise_id: int):
+    """Deletes an exercise and updates which words are used"""
+    await delete_exercise(exercise_id)
+    return {"status": "success"}

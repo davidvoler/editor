@@ -1,6 +1,7 @@
 from models.lesson import Lesson, LessonFull
 from models.exercise import Exercise
 from utils.db import get_query_results
+from utils.exercise_utils import get_lesson_exercises
 
 async def create_lesson(lesson: Lesson) -> Lesson:
     sql = """
@@ -11,18 +12,6 @@ async def create_lesson(lesson: Lesson) -> Lesson:
     values = (lesson.course_id, lesson.module_id, lesson.title, lesson.description, lesson.deleted, lesson.weight)
     row = await get_query_results(sql, values)
     return Lesson(**row[0])
-
-async def get_lesson_exercises(lesson_id: int) -> list[Exercise]:
-    sql = """
-    SELECT exercise_id, course_id, module_id, lesson_id, exercise_type, question, options,
-        explanation, sentence_alt1, sentence_alt2, sentence_alt3, ruby_text, annotations, answer
-    FROM course.exercise
-    WHERE lesson_id = %s
-    """
-    values = (lesson_id,)
-    rows = await get_query_results(sql, values)
-    return [Exercise(**row) for row in rows]
-
 
 async def get_lesson_full(lesson_id: int) -> LessonFull:
     sql = """

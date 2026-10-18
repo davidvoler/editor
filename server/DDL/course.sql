@@ -86,6 +86,7 @@ create table course.exercise (
     module_id int,
     lesson_id int ,
     exercise_type varchar(100),
+    word varchar(255), -- the word the exercise practises; marks it used in course.words
     question varchar(255),
     options jsonb,
     explanation text,
