@@ -12,7 +12,9 @@ MAX_EXERCISES_PER_LESSON = 10
 # When a module has this many lessons (and the last is full), continue in a new module.
 MAX_LESSONS_PER_MODULE = 5
 # Words turned into exercises by one request, to keep the AI call short.
-EXERCISES_PER_REQUEST = 5
+EXERCISES_PER_REQUEST = 3
+# Exercise options offered at once, each for different unused words.
+EXERCISE_OPTIONS = 3
 
 
 class ContextStats(BaseModel):
@@ -92,11 +94,16 @@ async def context_options(course_id: int) -> list[PromptOption]:
         options.append(_option(
             stats, "Create the next lesson", PromptRouterType.LESSON, PromptType.LESSON_CREATE,
             f"The lesson has {stats.lesson_exercises} exercises."))
-    count = min(unused, EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises)
-    if count > 0:
-        options.append(_option(
-            stats, f"Create exercises for {count} unused words", PromptRouterType.EXERCISE,
-            PromptType.EXERCISE_SINGLE_CHOICE, f"{unused} words are not used in an exercise yet."))
+    # Alternatives, each naming its own unused words; the option carries them in prompt_values.
+    size = min(EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises)
+    if size > 0:
+        for start in range(0, min(unused, size * EXERCISE_OPTIONS), size):
+            words = stats.unused_words[start:start + size]
+            option = _option(
+                stats, f"Create single choice exercises for: {', '.join(words)}", PromptRouterType.EXERCISE,
+                PromptType.EXERCISE_SINGLE_CHOICE, f"{unused} words are not used in an exercise yet.")
+            option.prompt_values = words
+            options.append(option)
     # A video module gets its words from its parts first.
     if not unused and not (is_video and video_options):
         options.append(_option(

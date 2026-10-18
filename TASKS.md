@@ -32,7 +32,7 @@
     - [v] No words - suggest words
     - [v] No exercise - suggest create exercise for words 
         > Q: How are exercises created? Decision: one AI call writes one exercise for each of up to 5 unused words, saved in the current lesson, which marks the words used.
-        > Q: What is a single-choice exercise (the default)? Decision: a sentence that uses the word; the student picks the word's translation from 4 options (answer + 3 wrong translations). Fill in the blank (sentence with ___, the word is the answer) is generated only when prompt_type is fill_in_the_blank.
+        > Q: What is a single-choice exercise (the default)? Decision (per David): a sentence in the learned language that uses the word; the student picks the sentence's correct translation from 5 options: the correct translation + 4 wrong ones that look alike but change the meaning (another word, person, tense or negation). The manual form still starts with 4 option rows. Fill in the blank (sentence with ___, the word is the answer) is generated only when prompt_type is fill_in_the_blank.
     - [v] too many exercise for the current lesson - create the next lesson
         > Q: What happens after creating it? Decision: "Lesson N+1" is added and becomes the current context, so new exercises go there.
     - [v] too many lessons per module - suggest creating the next module, move words from current module to the next one    

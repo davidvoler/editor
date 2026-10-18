@@ -54,15 +54,20 @@ async def get_fill_in_blank_for_words(
 
 
 
-class WordMeaningQuestion(BaseModel):
+# Wrong translations offered with each single-choice sentence.
+WRONG_TRANSLATIONS = 4
+
+
+class SentenceTranslationQuestion(BaseModel):
     word: str = Field(description="The word from the given list that this question practises, spelled exactly as given.")
     sentence: str = Field(description="A short sentence in the learned language that uses the word.")
-    answer: str = Field(description="The correct translation of the word as used in the sentence, in the student's language.")
-    incorrect_options: list[str] = Field(description="3 plausible but wrong translations, in the student's language.")
-    translation: str = Field(description="Translation of the full sentence in the student's language.")
+    translation: str = Field(description="The correct translation of the whole sentence in the student's language.")
+    incorrect_translations: list[str] = Field(
+        description=f"{WRONG_TRANSLATIONS} wrong translations of the sentence in the student's language: "
+                    "plausible, similar sentences whose meaning differs from the original.")
 
-class WordMeaningQuestionList(BaseModel):
-    questions: list[WordMeaningQuestion] = Field(description="One question per given word.")
+class SentenceTranslationQuestionList(BaseModel):
+    questions: list[SentenceTranslationQuestion] = Field(description="One question per given word.")
 
 async def get_single_choice_for_words(
     words: list[str],
@@ -70,17 +75,19 @@ async def get_single_choice_for_words(
     to_lang: str,
     level: str,
     provider: str = "ollama",
-    model: str = "llama3.1") -> WordMeaningQuestionList:
-    """One single-choice question per word: a sentence using the word, and four
-    translations of the word to choose from, in one AI call."""
+    model: str = "llama3.1") -> SentenceTranslationQuestionList:
+    """One single-choice question per word: a sentence in the learned language that
+    uses the word, its correct translation, and wrong translations to choose from."""
     agent = Agent(
         get_ai_model(provider, model),
-        output_type=WordMeaningQuestionList,
+        output_type=SentenceTranslationQuestionList,
         system_prompt=f"You are an expert {lang} language teacher writing exercises for {level} learners who speak {to_lang}.",
     )
     result = await agent.run(
         f"Write one single-choice question for each of these {lang} words: {', '.join(words)}. "
-        f"For each word, write a short {lang} sentence that uses it, give the word's correct {to_lang} translation "
-        f"as used in that sentence, and 3 plausible but wrong {to_lang} translations."
+        f"For each word, write a short {lang} sentence that uses it, its correct {to_lang} translation, "
+        f"and {WRONG_TRANSLATIONS} wrong {to_lang} translations. Each wrong translation must read naturally "
+        f"and look like the correct one, but change the meaning (for example a different word, person, "
+        f"tense or negation), so only a learner who understands the {lang} sentence picks the right one."
     )
     return result.output

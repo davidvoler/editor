@@ -6,11 +6,20 @@ from models.prompts import (
     PromptRouterType,
     PromptType,
 )
-from prompts.single_choice import get_fill_in_blank_for_words, get_single_choice_for_words
+from prompts.single_choice import WRONG_TRANSLATIONS, get_fill_in_blank_for_words, get_single_choice_for_words
 from utils.context_options import context_stats, EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON
 from utils.course_utils import get_course
 from utils.exercise_utils import create_exercise
 from utils.prompt_utils import save_prompt_response
+
+
+def _translation_choices(common: dict, questions) -> list[Exercise]:
+    """Sentence in the learned language; the options are its translations, the correct one first."""
+    return [Exercise(**common, word=q.word, question=q.sentence, answer=q.translation,
+                     options={"correct": [q.translation],
+                              "incorrect": q.incorrect_translations[:WRONG_TRANSLATIONS]},
+                     sentence_alt1=q.translation)
+            for q in questions]
 
 
 async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, words: list[str],
@@ -26,23 +35,19 @@ async def _generate(prompt_request: PromptRequest, exercise_type: PromptType, wo
                          options={"incorrect": g.incorrect_options[:3]}, sentence_alt1=g.translation)
                 for g in generated]
     if exercise_type == PromptType.EXERCISE_SINGLE_CHOICE:
-        generated = (await get_single_choice_for_words(words, **kwargs)).questions
-        return [Exercise(**common, word=g.word, question=g.sentence, answer=g.answer,
-                         options={"incorrect": g.incorrect_options[:3]}, sentence_alt1=g.translation)
-                for g in generated]
+        return _translation_choices(common, (await get_single_choice_for_words(words, **kwargs)).questions)
 
     if exercise_type == PromptType.EXERCISE_MULTIPLE_CHOICE:
-        generated = (await get_single_choice_for_words(words, **kwargs)).questions
-        return [Exercise(**common, word=g.word, question=g.sentence, answer=g.answer,
-                         options={"incorrect": g.incorrect_options[:3]}, sentence_alt1=g.translation)
-                for g in generated]
+        return _translation_choices(common, (await get_single_choice_for_words(words, **kwargs)).questions)
 
 async def _create_exercises(prompt_request: PromptRequest, exercise_type: PromptType) -> PromptResponse:
     """Turns the module's unused words into exercises in the current lesson."""
     stats = await context_stats(prompt_request.course_id)
     context = stats.context
-    count = min(EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises)
-    words = stats.unused_words[:max(count, 0)]
+    count = max(min(EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises), 0)
+    # The words the picked option names, else the first unused ones.
+    requested = [str(w) for w in prompt_request.prompt_values or []]
+    words = [w for w in requested if w in stats.unused_words][:count] if requested else stats.unused_words[:count]
     created = []
     if words:
         course = await get_course(context.course_id)
