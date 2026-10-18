@@ -31,7 +31,8 @@
     > Q: Offer one option or all that apply? Decision: the most specific step only (next module > next lesson > create exercises), plus "Suggest (more) words" when there are no unused words.
     - [v] No words - suggest words
     - [v] No exercise - suggest create exercise for words 
-        > Q: How are exercises created? Decision: one AI call writes a single-choice question (sentence with ___, 3 wrong options, translation) for up to 5 unused words; answer = the word; saved in the current lesson, which marks the words used.
+        > Q: How are exercises created? Decision: one AI call writes one exercise for each of up to 5 unused words, saved in the current lesson, which marks the words used.
+        > Q: What is a single-choice exercise (the default)? Decision: a sentence that uses the word; the student picks the word's translation from 4 options (answer + 3 wrong translations). Fill in the blank (sentence with ___, the word is the answer) is generated only when prompt_type is fill_in_the_blank.
     - [v] too many exercise for the current lesson - create the next lesson
         > Q: What happens after creating it? Decision: "Lesson N+1" is added and becomes the current context, so new exercises go there.
     - [v] too many lessons per module - suggest creating the next module, move words from current module to the next one    
@@ -58,10 +59,12 @@
 ## Feature Pack 4 - Ui improve improvements
 - [] words panes - allow adding words manually - translation is optional
 - [] Lessons pane - 
-    - [] adding exercises manually
+    - [v] adding exercises manually
+        > Q: One form or one per type? Decision: one dialog whose fields follow the type. Single/multiple choice: sentence, 4 options by default with a checkbox for each correct one (single choice allows exactly one), add/remove options, translation, explanation. True/false: statement + True/False. Explanation: one multi-line text. Fill in the blank: question with ___, answer, wrong options, translation.
+        > Q: How are several correct options stored? Decision: options = {"correct": [...], "incorrect": [...]}, answer = the first correct option. Exercises without options.correct (the AI's) read their answer as the one correct option. True/false stores answer "true"/"false".
     - [] Edit Exercise - you can correct any part of the exercise manually 
-    - [] Add options 
-    - [] delete options 
+    - [v] Add options 
+    - [v] delete options 
     - [] correct sentences and correct translation
 
 

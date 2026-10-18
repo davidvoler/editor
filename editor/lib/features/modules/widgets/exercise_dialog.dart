@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/module.dart';
 
-/// Adds or edits an exercise. Pops the edited exercise, or null when
-/// cancelled.
+/// Adds or edits an exercise, with fields that fit its type. Pops the
+/// edited exercise, or null when cancelled.
 class ExerciseDialog extends StatefulWidget {
   const ExerciseDialog({
     required this.exercise,
@@ -21,7 +21,19 @@ class ExerciseDialog extends StatefulWidget {
   State<ExerciseDialog> createState() => _ExerciseDialogState();
 }
 
+/// One answer option of a choice exercise.
+class _Option {
+  _Option([String text = '', this.correct = false])
+    : controller = TextEditingController(text: text);
+
+  final TextEditingController controller;
+  bool correct;
+}
+
 class _ExerciseDialogState extends State<ExerciseDialog> {
+  /// Options a new choice exercise starts with.
+  static const defaultOptionCount = 4;
+
   final formKey = GlobalKey<FormState>();
   late String type = exerciseTypes.containsKey(widget.exercise.type)
       ? widget.exercise.type
@@ -39,6 +51,28 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
   late final explanation = TextEditingController(
     text: widget.exercise.explanation,
   );
+  late final List<_Option> options = _initialOptions();
+  late bool statementIsTrue = widget.exercise.answer.toLowerCase() != 'false';
+
+  /// Shown under the options when they are not valid.
+  String? optionsError;
+
+  bool get isChoice => type == 'single_choice' || type == 'multiple_choice';
+
+  List<_Option> _initialOptions() {
+    final exercise = widget.exercise;
+    return [
+      for (final option in exercise.correctOptions) _Option(option, true),
+      for (final option in exercise.incorrectOptions) _Option(option),
+      for (
+        var i =
+            exercise.correctOptions.length + exercise.incorrectOptions.length;
+        i < defaultOptionCount;
+        i++
+      )
+        _Option(),
+    ];
+  }
 
   @override
   void dispose() {
@@ -49,6 +83,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
       incorrect,
       translation,
       explanation,
+      for (final option in options) option.controller,
     ]) {
       controller.dispose();
     }
@@ -56,9 +91,76 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
     super.dispose();
   }
 
+  void _setCorrect(_Option option, bool correct) {
+    setState(() {
+      // A single choice exercise has exactly one correct option.
+      if (type == 'single_choice' && correct) {
+        for (final other in options) {
+          other.correct = false;
+        }
+      }
+      option.correct = correct;
+      optionsError = null;
+    });
+  }
+
+  /// The option problem to show, or null when the options are valid.
+  String? _validateOptions() {
+    final filled = options.where((o) => o.controller.text.trim().isNotEmpty);
+    final correct = filled.where((o) => o.correct).length;
+    if (filled.length < 2) return 'Add at least 2 options.';
+    if (correct == 0) return 'Mark the correct option.';
+    if (type == 'single_choice' && correct > 1) {
+      return 'A single choice exercise has one correct option.';
+    }
+    return null;
+  }
+
   void submit() {
-    if (!formKey.currentState!.validate()) return;
+    final formValid = formKey.currentState!.validate();
+    setState(() => optionsError = isChoice ? _validateOptions() : null);
+    if (!formValid || optionsError != null) return;
     final current = widget.exercise;
+    List<String> lines(String text) => [
+      for (final line in text.split('\n'))
+        if (line.trim().isNotEmpty) line.trim(),
+    ];
+    final filled = [
+      for (final option in options)
+        if (option.controller.text.trim().isNotEmpty) option,
+    ];
+    final (
+      String questionText,
+      String answerText,
+      List<String> correct,
+      List<String> wrong,
+    ) = switch (type) {
+      'single_choice' || 'multiple_choice' => (
+        question.text.trim(),
+        filled.firstWhere((o) => o.correct).controller.text.trim(),
+        [
+          for (final o in filled)
+            if (o.correct) o.controller.text.trim(),
+        ],
+        [
+          for (final o in filled)
+            if (!o.correct) o.controller.text.trim(),
+        ],
+      ),
+      'true_false' => (
+        question.text.trim(),
+        '$statementIsTrue',
+        ['$statementIsTrue'],
+        ['${!statementIsTrue}'],
+      ),
+      'explanation' => ('', '', <String>[], <String>[]),
+      _ => (
+        question.text.trim(),
+        answer.text.trim(),
+        [answer.text.trim()],
+        lines(incorrect.text),
+      ),
+    };
     Navigator.of(context).pop(
       Exercise(
         id: current.id,
@@ -67,13 +169,11 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
         lessonId: current.lessonId,
         type: type,
         word: word.text.trim(),
-        question: question.text.trim(),
-        answer: answer.text.trim(),
-        incorrectOptions: [
-          for (final line in incorrect.text.split('\n'))
-            if (line.trim().isNotEmpty) line.trim(),
-        ],
-        translation: translation.text.trim(),
+        question: questionText,
+        answer: answerText,
+        correctOptions: correct,
+        incorrectOptions: wrong,
+        translation: type == 'explanation' ? '' : translation.text.trim(),
         explanation: explanation.text.trim(),
       ),
     );
@@ -121,7 +221,11 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
                             child: Text(entry.value),
                           ),
                       ],
-                      onChanged: (value) => setState(() => type = value!),
+                      onChanged: (value) => setState(() {
+                        type = value!;
+                        optionsError = null;
+                        if (type == 'single_choice') _keepOneCorrect();
+                      }),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -129,44 +233,7 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
                 ],
               ),
               gap,
-              TextFormField(
-                controller: question,
-                autofocus: isNew,
-                maxLines: null,
-                validator: _required,
-                decoration: const InputDecoration(
-                  labelText: 'Question',
-                  hintText: 'Use ___ for the blank',
-                ),
-              ),
-              gap,
-              TextFormField(
-                controller: answer,
-                validator: _required,
-                decoration: const InputDecoration(labelText: 'Answer'),
-              ),
-              gap,
-              TextFormField(
-                controller: incorrect,
-                minLines: 2,
-                maxLines: null,
-                decoration: const InputDecoration(
-                  labelText: 'Wrong options',
-                  hintText: 'One per line',
-                ),
-              ),
-              gap,
-              TextFormField(
-                controller: translation,
-                maxLines: null,
-                decoration: const InputDecoration(labelText: 'Translation'),
-              ),
-              gap,
-              TextFormField(
-                controller: explanation,
-                maxLines: null,
-                decoration: const InputDecoration(labelText: 'Explanation'),
-              ),
+              ..._buildTypeFields(isNew),
               const SizedBox(height: 26),
               Row(
                 children: [
@@ -188,6 +255,179 @@ class _ExerciseDialogState extends State<ExerciseDialog> {
       ),
     );
   }
+
+  /// Switching to single choice keeps only the first correct option.
+  void _keepOneCorrect() {
+    var seen = false;
+    for (final option in options) {
+      if (option.correct && seen) option.correct = false;
+      seen = seen || option.correct;
+    }
+  }
+
+  List<Widget> _buildTypeFields(bool isNew) {
+    const gap = SizedBox(height: 14);
+    final translationField = TextFormField(
+      controller: translation,
+      maxLines: null,
+      decoration: const InputDecoration(labelText: 'Translation'),
+    );
+    switch (type) {
+      case 'single_choice' || 'multiple_choice':
+        return [
+          TextFormField(
+            controller: question,
+            autofocus: isNew,
+            maxLines: null,
+            validator: _required,
+            decoration: const InputDecoration(
+              labelText: 'Sentence',
+              hintText: 'A sentence that uses the word',
+            ),
+          ),
+          gap,
+          ..._buildOptions(),
+          gap,
+          translationField,
+          gap,
+          TextFormField(
+            controller: explanation,
+            maxLines: null,
+            decoration: const InputDecoration(labelText: 'Explanation'),
+          ),
+        ];
+      case 'true_false':
+        return [
+          TextFormField(
+            controller: question,
+            autofocus: isNew,
+            maxLines: null,
+            validator: _required,
+            decoration: const InputDecoration(labelText: 'Statement'),
+          ),
+          gap,
+          const Text(
+            'The statement is',
+            style: TextStyle(color: Color(0xFF748087), fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('True')),
+              ButtonSegment(value: false, label: Text('False')),
+            ],
+            selected: {statementIsTrue},
+            onSelectionChanged: (value) =>
+                setState(() => statementIsTrue = value.single),
+          ),
+          gap,
+          translationField,
+        ];
+      case 'explanation':
+        return [
+          TextFormField(
+            controller: explanation,
+            autofocus: isNew,
+            minLines: 6,
+            maxLines: null,
+            keyboardType: TextInputType.multiline,
+            validator: _required,
+            decoration: const InputDecoration(
+              labelText: 'Explanation',
+              alignLabelWithHint: true,
+            ),
+          ),
+        ];
+      default:
+        return [
+          TextFormField(
+            controller: question,
+            autofocus: isNew,
+            maxLines: null,
+            validator: _required,
+            decoration: const InputDecoration(
+              labelText: 'Question',
+              hintText: 'Use ___ for the blank',
+            ),
+          ),
+          gap,
+          TextFormField(
+            controller: answer,
+            validator: _required,
+            decoration: const InputDecoration(labelText: 'Answer'),
+          ),
+          gap,
+          TextFormField(
+            controller: incorrect,
+            minLines: 2,
+            maxLines: null,
+            decoration: const InputDecoration(
+              labelText: 'Wrong options',
+              hintText: 'One per line',
+            ),
+          ),
+          gap,
+          translationField,
+        ];
+    }
+  }
+
+  /// Option rows with a checkbox marking the correct ones.
+  List<Widget> _buildOptions() => [
+    Text(
+      type == 'single_choice'
+          ? 'Options · check the correct one'
+          : 'Options · check every correct one',
+      style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
+    ),
+    for (final (index, option) in options.indexed)
+      Row(
+        children: [
+          Checkbox(
+            value: option.correct,
+            onChanged: (value) => _setCorrect(option, value ?? false),
+          ),
+          Expanded(
+            child: TextField(
+              controller: option.controller,
+              onChanged: (_) {
+                if (optionsError != null) setState(() => optionsError = null);
+              },
+              decoration: InputDecoration(hintText: 'Option ${index + 1}'),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Remove option',
+            onPressed: options.length <= 2
+                ? null
+                : () {
+                    setState(() => options.remove(option));
+                    // Disposed after the row that uses it is gone.
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => option.controller.dispose(),
+                    );
+                  },
+            icon: const Icon(Icons.close_rounded, size: 18),
+          ),
+        ],
+      ),
+    Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        onPressed: () => setState(() => options.add(_Option())),
+        icon: const Icon(Icons.add_rounded, size: 18),
+        label: const Text('Add option'),
+      ),
+    ),
+    if (optionsError != null)
+      Text(
+        optionsError!,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.error,
+          fontSize: 12,
+        ),
+      ),
+  ];
 
   /// A text field that suggests the module's words as you type.
   Widget _buildWordField() => RawAutocomplete<String>(

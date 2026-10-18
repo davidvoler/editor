@@ -5,31 +5,37 @@ import 'package:editor/features/modules/data/module.dart';
 import 'package:editor/features/modules/widgets/exercise_dialog.dart';
 
 void main() {
-  test('maps wrong options and translation to the server columns', () {
+  test('maps options and translation to the server columns', () {
     final exercise = Exercise.fromJson({
       'exercise_id': 1,
       'lesson_id': 11,
       'exercise_type': 'single_choice',
       'word': 'ciao',
-      'question': '___, come stai?',
-      'answer': 'Ciao',
+      'question': 'Ciao, come stai?',
+      'answer': 'hi',
       'options': {
-        'incorrect': ['Grazie', 'Prego'],
+        'incorrect': ['thanks', 'please'],
       },
       'sentence_alt1': 'Hi, how are you?',
     });
 
-    expect(exercise.incorrectOptions, ['Grazie', 'Prego']);
-    expect(exercise.translation, 'Hi, how are you?');
-    expect(exercise.toJson(), containsPair('word', 'ciao'));
+    // Exercises without options.correct, like the AI's, have the answer as
+    // their one correct option.
+    expect(exercise.correctOptions, ['hi']);
+    expect(exercise.incorrectOptions, ['thanks', 'please']);
     expect(exercise.toJson()['options'], {
-      'incorrect': ['Grazie', 'Prego'],
+      'correct': ['hi'],
+      'incorrect': ['thanks', 'please'],
     });
     expect(exercise.toJson()['sentence_alt1'], 'Hi, how are you?');
   });
 
-  testWidgets('the form returns the edited exercise', (tester) async {
-    tester.view.physicalSize = const Size(1440, 1000);
+  /// Opens the form for [exercise] and returns a getter for its result.
+  Future<Exercise? Function()> openForm(
+    WidgetTester tester, [
+    Exercise exercise = const Exercise(lessonId: 11),
+  ]) async {
+    tester.view.physicalSize = const Size(1440, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -40,8 +46,7 @@ void main() {
           builder: (context) => TextButton(
             onPressed: () async => result = await showDialog<Exercise>(
               context: context,
-              builder: (_) =>
-                  const ExerciseDialog(exercise: Exercise(lessonId: 11)),
+              builder: (_) => ExerciseDialog(exercise: exercise),
             ),
             child: const Text('open'),
           ),
@@ -50,30 +55,138 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
+    return () => result;
+  }
 
-    // Question and answer are required.
+  Future<void> pickType(WidgetTester tester, String label) async {
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  Finder optionField(int number) =>
+      find.widgetWithText(TextField, 'Option $number');
+
+  testWidgets('single choice starts with 4 options and one correct', (
+    tester,
+  ) async {
+    final result = await openForm(tester);
+    expect(find.byType(Checkbox), findsNWidgets(4));
+
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
-    expect(find.text('Required'), findsNWidgets(2));
+    expect(find.text('Required'), findsOneWidget);
+    expect(find.text('Add at least 2 options.'), findsOneWidget);
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Question'),
-      '___, come stai?',
+      find.widgetWithText(TextFormField, 'Sentence'),
+      'Ciao, come stai?',
     );
+    await tester.enterText(optionField(1), 'hi');
+    await tester.enterText(optionField(2), 'thanks');
+    await tester.enterText(optionField(3), 'please');
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark the correct option.'), findsOneWidget);
+
+    // Checking another option unchecks the first in single choice.
+    await tester.tap(find.byType(Checkbox).at(1));
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(result()?.type, 'single_choice');
+    expect(result()?.question, 'Ciao, come stai?');
+    expect(result()?.answer, 'hi');
+    expect(result()?.correctOptions, ['hi']);
+    expect(result()?.incorrectOptions, ['thanks', 'please']);
+  });
+
+  testWidgets('multiple choice keeps every checked option', (tester) async {
+    final result = await openForm(tester);
+    await pickType(tester, 'Multiple choice');
+
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Answer'),
-      'Ciao',
+      find.widgetWithText(TextFormField, 'Sentence'),
+      'Which are greetings?',
     );
+    await tester.enterText(optionField(1), 'ciao');
+    await tester.enterText(optionField(2), 'salve');
+    await tester.enterText(optionField(3), 'pane');
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.tap(find.byType(Checkbox).at(1));
+    await tester.tap(find.byTooltip('Remove option').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(Checkbox), findsNWidgets(3));
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(result()?.correctOptions, ['ciao', 'salve']);
+    expect(result()?.incorrectOptions, ['pane']);
+  });
+
+  testWidgets('true/false has a statement and a true or false answer', (
+    tester,
+  ) async {
+    final result = await openForm(tester);
+    await pickType(tester, 'True / false');
+    expect(find.byType(Checkbox), findsNothing);
+
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Wrong options'),
-      'Grazie\n\nPrego ',
+      find.widgetWithText(TextFormField, 'Statement'),
+      'Pane means bread.',
+    );
+    await tester.tap(find.text('False'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(result()?.type, 'true_false');
+    expect(result()?.question, 'Pane means bread.');
+    expect(result()?.answer, 'false');
+  });
+
+  testWidgets('explanation is one multi-line text', (tester) async {
+    final result = await openForm(tester);
+    await pickType(tester, 'Explanation');
+    expect(find.widgetWithText(TextFormField, 'Sentence'), findsNothing);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Explanation'),
+      'Ciao is informal.\nUse buongiorno with strangers.',
     );
     await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
 
-    expect(result?.lessonId, 11);
-    expect(result?.type, 'single_choice');
-    expect(result?.answer, 'Ciao');
-    expect(result?.incorrectOptions, ['Grazie', 'Prego']);
+    expect(result()?.type, 'explanation');
+    expect(
+      result()?.explanation,
+      'Ciao is informal.\nUse buongiorno with strangers.',
+    );
+    expect(result()?.question, '');
+  });
+
+  testWidgets('editing shows the saved options with the correct ones checked', (
+    tester,
+  ) async {
+    await openForm(
+      tester,
+      const Exercise(
+        id: 5,
+        type: 'multiple_choice',
+        question: 'Which are greetings?',
+        correctOptions: ['ciao', 'salve'],
+        incorrectOptions: ['pane'],
+      ),
+    );
+    final checks = tester
+        .widgetList<Checkbox>(find.byType(Checkbox))
+        .map((c) => c.value)
+        .toList();
+    // Padded to 4 options.
+    expect(checks, [true, true, false, false]);
+    expect(find.text('Save'), findsOneWidget);
   });
 }

@@ -694,32 +694,55 @@ class _ExerciseCard extends StatelessWidget {
                     letterSpacing: 1,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  exercise.question,
-                  style: const TextStyle(
-                    color: Color(0xFF17252D),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                if (exercise.question.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    exercise.question,
+                    style: const TextStyle(
+                      color: Color(0xFF17252D),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 4),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: exercise.answer,
-                        style: const TextStyle(
-                          color: Color(0xFF2B7771),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      for (final option in exercise.incorrectOptions)
-                        TextSpan(text: '   $option'),
-                    ],
+                if (exercise.type == 'explanation')
+                  Text(
+                    exercise.explanation,
+                    style: const TextStyle(
+                      color: Color(0xFF17252D),
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  )
+                else if (exercise.type == 'true_false')
+                  Text(
+                    exercise.answer.toLowerCase() == 'false' ? 'False' : 'True',
+                    style: const TextStyle(
+                      color: Color(0xFF2B7771),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                else
+                  // Correct options in bold, then the wrong ones.
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        for (final option in exercise.correctOptions)
+                          TextSpan(
+                            text: '$option   ',
+                            style: const TextStyle(
+                              color: Color(0xFF2B7771),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        for (final option in exercise.incorrectOptions)
+                          TextSpan(text: '$option   '),
+                      ],
+                    ),
+                    style: muted,
                   ),
-                  style: muted,
-                ),
                 if (exercise.translation.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(exercise.translation, style: muted),
