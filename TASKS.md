@@ -9,7 +9,7 @@
 
 ### Design the architecture 
 - [v] prompts, prompts router etc  
-- [v] Resultsstructure  
+- [v] Results structure  
 ### Recreate the database structure 
 - [v] Recreate all table and databases for course  
 - [v] Create tables for prompts and prompt history
