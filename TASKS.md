@@ -68,6 +68,9 @@
 - [v] video preview in each video lesson
     > Q: Where do part times come from? Decision: new columns course.lesson.video_start/video_end (seconds), set when a video is split; existing parts were backfilled from their titles. The modules list returns each module's video_url.
     > Q: What does "Play part" do? Decision: plays from the part's start and stops at its end. The preview is cued at the part's start; YouTube's own play button resumes from where it paused and also stops at the part's end. Player: youtube_player_iframe (web, macOS, iOS, Android), max 420px wide.
+- [v] lesson preview
+    > Q: Full-course page or per-module pane? Decision: a "Preview" tab in the course pane for the current lesson, built as a reusable LessonPreview widget so a full-course preview page (the header's Preview button) can reuse it later.
+    > Q: How does it play? Decision: the video part first (if any), then one exercise at a time with options shuffled (same order each time); single choice, fill in the blank and true/false check on tap, multiple choice has a Check button, explanations are read. After checking: right/wrong colours, the translation and the explanation. At the end "N of M correct" (explanations not counted) and "Start again". Editing the lesson restarts the preview.
 - [v] sentences pane on the chat page
     > Q: Separate pane or a tab? Decision: a "Sentences" tab in the course pane next to Modules/Words/Lesson, for the current module: sentence + translation, grouped by lesson (video part), marked when an exercise asks it (GET /words/sentences). Read-only for now.
 - [] words panes - allow adding words manually - translation is optional
@@ -75,13 +78,14 @@
     - [v] adding exercises manually
         > Q: One form or one per type? Decision: one dialog whose fields follow the type. Single/multiple choice: sentence, 4 options by default with a checkbox for each correct one (single choice allows exactly one), add/remove options, translation, explanation. True/false: statement + True/False. Explanation: one multi-line text. Fill in the blank: question with ___ and the same option rows with exactly one correct option (the word for the blank), translation, explanation.
         > Q: How are several correct options stored? Decision: options = {"correct": [...], "incorrect": [...]}, answer = the first correct option. Exercises without options.correct (the AI's) read their answer as the one correct option. True/false stores answer "true"/"false".
-    - [] Edit Exercise - you can correct any part of the exercise manually 
+    - [v] Edit Exercise - you can correct any part of the exercise manually 
     - [v] Add options 
     - [v] delete options 
-    - [] correct sentences and correct translation
+    - [v] correct sentences and correct translation
 
 
 ## Feature Pack 4 - Ui improve improvements - phase 2 
+- [v] improvement phase 1 
 module/lesson issue 
 we have 3 panes now 
 - lessons
@@ -92,13 +96,20 @@ I am considering embedding lessons inside modules
 adding a new pane 
 - sentences 
 Do we need to show the video? maybe it is not a bad idea = but were will we see it?
+- [] add video preview 
+
+
+## Feature Pack 5 - Preview lesson
+- [] decide is preview simply another
+    - [] Full course preview in a different page/window
+    - [] Per module preview pane
+    - [] Per lesson preview pane
 
 
 
 
 
-
-## Feature Pack 20 - Words in module course 
+## Feature Pack 20 -Context words in module 
 - [] Words appeared in sentences should be collected - suggest them as new words to learn
 - []  
 

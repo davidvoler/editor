@@ -7,6 +7,7 @@ import '../../chat/widgets/chat_panel.dart';
 import '../../modules/data/module.dart';
 import '../../modules/pages/module_editing_page.dart';
 import '../../modules/widgets/exercise_dialog.dart';
+import '../../modules/widgets/lesson_preview.dart';
 import '../../modules/widgets/part_video.dart';
 import '../data/course.dart';
 import '../data/prompts_context.dart';
@@ -186,7 +187,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
           const SizedBox(height: 20),
           Expanded(
             child: DefaultTabController(
-              length: 3,
+              length: 4,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -200,6 +201,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                       Tab(text: 'Modules'),
                       Tab(text: 'Words'),
                       Tab(text: 'Sentences'),
+                      Tab(text: 'Preview'),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -209,6 +211,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                         _buildModules(),
                         _buildWords(),
                         _buildSentences(),
+                        _buildPreview(),
                       ],
                     ),
                   ),
@@ -242,6 +245,59 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
       module: modules.firstWhere((m) => m.id == moduleId),
       context: courseContext.value,
     );
+  }
+
+  /// The current lesson as a student meets it.
+  Widget _buildPreview() {
+    if (course.id == null) {
+      return const _NoWords('Save the course to preview its lessons.');
+    }
+    final current = _current();
+    if (current == null) {
+      return ref.watch(modulesProvider(course.id!)).value?.isEmpty ?? false
+          ? const _NoWords('Add a module to preview its lessons.')
+          : const Center(child: CircularProgressIndicator());
+    }
+    final module = current.module;
+    return ref
+        .watch(lessonsProvider(module.id))
+        .when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) =>
+              Center(child: Text('Could not load the lesson.\n$error')),
+          data: (lessons) {
+            if (lessons.isEmpty) {
+              return const _NoWords('This module has no lessons yet.');
+            }
+            // The context's lesson, else the module's first.
+            final lesson = lessons.firstWhere(
+              (lesson) => lesson.id == current.context?.lessonId,
+              orElse: () => lessons.first,
+            );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${module.title.isEmpty ? 'Untitled module' : module.title}'
+                  '  ·  ${lesson.title.isEmpty ? 'Untitled lesson' : lesson.title}',
+                  style: const TextStyle(
+                    color: Color(0xFF748087),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: LessonPreview(
+                    // Starts over when the lesson or its exercises change.
+                    key: ObjectKey(lesson),
+                    lesson: lesson,
+                    videoUrl: module.videoUrl,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
   }
 
   Widget _buildSentences() {
