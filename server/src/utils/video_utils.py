@@ -98,7 +98,7 @@ async def create_parts(course_id: int, module_id: int, subtitles: list[Subtitle]
         lessons.append(await create_lesson(Lesson(
             course_id=course_id, module_id=module_id, weight=index,
             title=f"Part {index + 1} ({_clock(section.start)}-{_clock(section.end)})",
-            description=section.text,
+            description=section.text, video_start=section.start, video_end=section.end,
         )))
     return lessons
 
@@ -106,7 +106,7 @@ async def create_parts(course_id: int, module_id: int, subtitles: list[Subtitle]
 async def next_part_to_extract(module_id: int) -> Lesson | None:
     """The first part whose words and sentences are not extracted yet."""
     rows = await get_query_results(
-        """SELECT lesson_id, course_id, module_id, title, description, deleted, weight
+        """SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
         FROM course.lesson
         WHERE module_id = %s AND words IS NULL AND COALESCE(description, '') <> ''
         ORDER BY weight, lesson_id LIMIT 1""",
@@ -176,7 +176,7 @@ async def next_part_with_exercise_material(module_id: int) -> tuple[Lesson, list
     """The first extracted part that still has words or sentences without exercises,
     with those words and sentences."""
     rows = await get_query_results(
-        """SELECT lesson_id, course_id, module_id, title, description, deleted, weight
+        """SELECT lesson_id, course_id, module_id, title, description, deleted, weight, video_start, video_end
         FROM course.lesson WHERE module_id = %s AND words IS NOT NULL
         ORDER BY weight, lesson_id""",
         (module_id,),

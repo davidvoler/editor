@@ -34,10 +34,13 @@ async def get_module_full(module_id: int) -> ModuleFull:
 
 async def get_course_modules(course_id: int) -> list[Module]:
     sql = """
-    SELECT module_id, course_id, title, description, deleted, weight
-    FROM course.module
-    WHERE course_id = %s
-    ORDER BY weight, module_id
+    SELECT m.module_id, m.course_id, m.title, m.description, m.deleted, m.weight,
+        (SELECT v.url FROM course.video v
+         WHERE v.module_id = m.module_id AND v.deleted IS NOT TRUE
+         ORDER BY v.video_id DESC LIMIT 1) AS video_url
+    FROM course.module m
+    WHERE m.course_id = %s
+    ORDER BY m.weight, m.module_id
     """
     values = (course_id,)
     rows = await get_query_results(sql, values)

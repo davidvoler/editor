@@ -76,7 +76,9 @@ create table course.lesson (
     description text,
     words varchar(100)[],
     deleted boolean default false,
-    weight int2 DEFAULT 0 NULL
+    weight int2 DEFAULT 0 NULL,
+    video_start float4 DEFAULT 0 NULL, -- for a video part: where it starts in the video, in seconds
+    video_end float4 DEFAULT 0 NULL
 );
 
 drop table if exists course.exercise;

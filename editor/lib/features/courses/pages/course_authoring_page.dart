@@ -7,6 +7,7 @@ import '../../chat/widgets/chat_panel.dart';
 import '../../modules/data/module.dart';
 import '../../modules/pages/module_editing_page.dart';
 import '../../modules/widgets/exercise_dialog.dart';
+import '../../modules/widgets/part_video.dart';
 import '../data/course.dart';
 import '../data/prompts_context.dart';
 
@@ -668,9 +669,22 @@ class _LessonExercises extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercises = lesson.exercises;
+    final videoStart = lesson.videoStart;
+    final showVideo =
+        videoStart != null && PartVideo.videoId(module.videoUrl) != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (showVideo) ...[
+          PartVideo(
+            // A new player for each part.
+            key: ValueKey(lesson.id),
+            videoUrl: module.videoUrl,
+            start: videoStart,
+            end: lesson.videoEnd,
+          ),
+          const SizedBox(height: 12),
+        ],
         if (lesson.description.isNotEmpty) ...[
           _PartText(text: lesson.description),
           const SizedBox(height: 12),

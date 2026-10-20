@@ -65,6 +65,9 @@
 ## Feature Pack 4 - Ui improve improvements
 - [v] lesson pane merged into the module pane; the separate Lesson tab is removed
     > Q: How do lessons show inside a module? Decision: the current module lists its lessons (title + exercise count); the current lesson (context, else the first) opens in place with the part text, "Add exercise" and the exercise cards (edit/delete). Tapping another lesson makes it current.
+- [v] video preview in each video lesson
+    > Q: Where do part times come from? Decision: new columns course.lesson.video_start/video_end (seconds), set when a video is split; existing parts were backfilled from their titles. The modules list returns each module's video_url.
+    > Q: What does "Play part" do? Decision: plays from the part's start and stops at its end. The preview is cued at the part's start; YouTube's own play button resumes from where it paused and also stops at the part's end. Player: youtube_player_iframe (web, macOS, iOS, Android), max 420px wide.
 - [v] sentences pane on the chat page
     > Q: Separate pane or a tab? Decision: a "Sentences" tab in the course pane next to Modules/Words/Lesson, for the current module: sentence + translation, grouped by lesson (video part), marked when an exercise asks it (GET /words/sentences). Read-only for now.
 - [] words panes - allow adding words manually - translation is optional
