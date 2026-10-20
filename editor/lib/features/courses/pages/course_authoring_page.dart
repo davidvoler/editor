@@ -108,6 +108,30 @@ class CourseDataPane extends ConsumerStatefulWidget {
 class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
   Course get course => widget.course;
 
+  /// Whether the current lesson was closed by tapping it.
+  bool lessonClosed = false;
+
+  /// Whether the current module was closed by tapping it.
+  bool moduleClosed = false;
+
+  /// Tapping the open module closes it; tapping a closed one opens it and
+  /// makes it current.
+  void _toggleModule(int courseId, int moduleId, bool isOpen, bool isCurrent) {
+    setState(() {
+      moduleClosed = isOpen;
+      // Another module opens with its current lesson showing.
+      if (!isCurrent) lessonClosed = false;
+    });
+    if (!isOpen) _select(courseId, moduleId);
+  }
+
+  /// Tapping the open lesson closes it; tapping a closed one opens it and
+  /// makes it current.
+  void _toggleLesson(int courseId, int moduleId, Lesson lesson, bool isOpen) {
+    setState(() => lessonClosed = isOpen);
+    if (!isOpen) _select(courseId, moduleId, lesson.id);
+  }
+
   /// Makes the module, and the lesson when given, the course's current
   /// context.
   Future<void> _select(int courseId, int moduleId, [int lessonId = 0]) async {
@@ -351,9 +375,17 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                   courseId: id,
                   module: module,
                   isCurrent: module.id == currentModuleId,
+                  isOpen: module.id == currentModuleId && !moduleClosed,
                   currentLessonId: current?.lessonId ?? 0,
-                  onTap: () => _select(id, module.id),
-                  onLessonTap: (lesson) => _select(id, module.id, lesson.id),
+                  lessonClosed: lessonClosed,
+                  onTap: () => _toggleModule(
+                    id,
+                    module.id,
+                    module.id == currentModuleId && !moduleClosed,
+                    module.id == currentModuleId,
+                  ),
+                  onLessonTap: (lesson, isOpen) =>
+                      _toggleLesson(id, module.id, lesson, isOpen),
                 );
               },
             );
@@ -367,17 +399,27 @@ class _ModuleCard extends ConsumerWidget {
     required this.courseId,
     required this.module,
     required this.isCurrent,
+    required this.isOpen,
     required this.currentLessonId,
     required this.onTap,
     required this.onLessonTap,
+    this.lessonClosed = false,
   });
 
   final int courseId;
   final Module module;
   final bool isCurrent;
+
+  /// Whether the card shows its lessons.
+  final bool isOpen;
   final int currentLessonId;
   final VoidCallback onTap;
-  final ValueChanged<Lesson> onLessonTap;
+
+  /// Called with the tapped lesson and whether it is open.
+  final void Function(Lesson lesson, bool isOpen) onLessonTap;
+
+  /// Whether the current lesson is closed.
+  final bool lessonClosed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -396,7 +438,7 @@ class _ModuleCard extends ConsumerWidget {
           ListTile(
             onTap: onTap,
             leading: Icon(
-              isCurrent ? Icons.folder_open_rounded : Icons.folder_outlined,
+              isOpen ? Icons.folder_open_rounded : Icons.folder_outlined,
               color: const Color(0xFF2B7771),
             ),
             title: Text(
@@ -413,7 +455,7 @@ class _ModuleCard extends ConsumerWidget {
                     style: const TextStyle(color: Color(0xFF748087)),
                   ),
           ),
-          if (isCurrent) _buildLessons(ref),
+          if (isOpen) _buildLessons(ref),
         ],
       ),
     );
@@ -432,9 +474,10 @@ class _ModuleCard extends ConsumerWidget {
           _LessonRow(
             lesson: lesson,
             isCurrent: lesson.id == current,
-            onTap: () => onLessonTap(lesson),
+            onTap: () =>
+                onLessonTap(lesson, lesson.id == current && !lessonClosed),
           ),
-          if (lesson.id == current)
+          if (lesson.id == current && !lessonClosed)
             Padding(
               padding: const EdgeInsets.fromLTRB(6, 10, 0, 6),
               child: _LessonExercises(
