@@ -369,3 +369,7 @@ Pros
 - User contains permission and maybe also preferences 
 Cons
 - The auth code was complicated - rewriting will be time consuming
+
+
+
+## Next steps

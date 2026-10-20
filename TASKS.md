@@ -82,3 +82,12 @@
 - []  
 
 
+
+## UI Planning 
+
+
+
+
+## Next steps 
+1. improve ui - view words/sentences/exercises
+2. Learner part copy logic from the existing code
