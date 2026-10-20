@@ -63,6 +63,10 @@
 
 
 ## Feature Pack 4 - Ui improve improvements
+- [v] lesson pane merged into the module pane; the separate Lesson tab is removed
+    > Q: How do lessons show inside a module? Decision: the current module lists its lessons (title + exercise count); the current lesson (context, else the first) opens in place with the part text, "Add exercise" and the exercise cards (edit/delete). Tapping another lesson makes it current.
+- [v] sentences pane on the chat page
+    > Q: Separate pane or a tab? Decision: a "Sentences" tab in the course pane next to Modules/Words/Lesson, for the current module: sentence + translation, grouped by lesson (video part), marked when an exercise asks it (GET /words/sentences). Read-only for now.
 - [] words panes - allow adding words manually - translation is optional
 - [] Lessons pane - 
     - [v] adding exercises manually
@@ -74,17 +78,26 @@
     - [] correct sentences and correct translation
 
 
+## Feature Pack 4 - Ui improve improvements - phase 2 
+module/lesson issue 
+we have 3 panes now 
+- lessons
+- modules
+- words
+
+I am considering embedding lessons inside modules
+adding a new pane 
+- sentences 
+Do we need to show the video? maybe it is not a bad idea = but were will we see it?
+
+
+
 
 
 
 ## Feature Pack 20 - Words in module course 
 - [] Words appeared in sentences should be collected - suggest them as new words to learn
 - []  
-
-
-
-## UI Planning 
-
 
 
 

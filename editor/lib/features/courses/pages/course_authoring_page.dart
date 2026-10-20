@@ -174,7 +174,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                     tabs: [
                       Tab(text: 'Modules'),
                       Tab(text: 'Words'),
-                      Tab(text: 'Lesson'),
+                      Tab(text: 'Sentences'),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -183,7 +183,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
                       children: [
                         _buildModules(),
                         _buildWords(),
-                        _buildLesson(),
+                        _buildSentences(),
                       ],
                     ),
                   ),
@@ -219,38 +219,51 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
     );
   }
 
-  Widget _buildLesson() {
+  Widget _buildSentences() {
     if (course.id == null) {
-      return const _NoWords('Save the course to add lessons.');
+      return const _NoWords('Save the course to add sentences.');
     }
     final current = _current();
     if (current == null) {
       return ref.watch(modulesProvider(course.id!)).value?.isEmpty ?? false
-          ? const _NoWords('Add a module to add lessons.')
+          ? const _NoWords('Add a module to add sentences.')
           : const Center(child: CircularProgressIndicator());
     }
     final module = current.module;
+    final key = (courseId: current.courseId, moduleId: module.id);
+    // Lesson titles label the groups, e.g. a video's parts.
+    final lessons = ref.watch(lessonsProvider(module.id)).value ?? const [];
     return ref
-        .watch(lessonsProvider(module.id))
+        .watch(sentencesProvider(key))
         .when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) =>
-              Center(child: Text('Could not load the lessons.\n$error')),
-          data: (lessons) {
-            if (lessons.isEmpty) {
-              return const _NoWords('This module has no lessons yet.');
-            }
-            // The context's lesson when it is in this module, else the first.
-            final lesson = lessons.firstWhere(
-              (lesson) => lesson.id == current.context?.lessonId,
-              orElse: () => lessons.first,
-            );
-            return _LessonExercises(
-              courseId: current.courseId,
-              module: module,
-              lesson: lesson,
-            );
-          },
+          error: (error, _) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Could not load the sentences.\n$error'),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => ref.invalidate(sentencesProvider(key)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+          data: (sentences) => sentences.isEmpty
+              ? const _NoWords(
+                  'No sentences in this module yet. '
+                  'Extract them from a video part.',
+                )
+              : _SentenceList(
+                  moduleTitle: module.title.isEmpty
+                      ? 'Untitled module'
+                      : module.title,
+                  sentences: sentences,
+                  lessonTitles: {
+                    for (final lesson in lessons) lesson.id: lesson.title,
+                  },
+                ),
         );
   }
 
@@ -335,6 +348,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
               itemBuilder: (context, index) {
                 final module = modules[index];
                 return _ModuleCard(
+                  courseId: id,
                   module: module,
                   isCurrent: module.id == currentModuleId,
                   currentLessonId: current?.lessonId ?? 0,
@@ -350,6 +364,7 @@ class _CourseDataPaneState extends ConsumerState<CourseDataPane> {
 
 class _ModuleCard extends ConsumerWidget {
   const _ModuleCard({
+    required this.courseId,
     required this.module,
     required this.isCurrent,
     required this.currentLessonId,
@@ -357,6 +372,7 @@ class _ModuleCard extends ConsumerWidget {
     required this.onLessonTap,
   });
 
+  final int courseId;
   final Module module;
   final bool isCurrent;
   final int currentLessonId;
@@ -403,6 +419,35 @@ class _ModuleCard extends ConsumerWidget {
     );
   }
 
+  /// The lessons; the context's lesson (else the first) opens with its
+  /// exercises.
+  Widget _buildLessonList(List<Lesson> lessons) {
+    final current = lessons.any((l) => l.id == currentLessonId)
+        ? currentLessonId
+        : lessons.first.id;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final lesson in lessons) ...[
+          _LessonRow(
+            lesson: lesson,
+            isCurrent: lesson.id == current,
+            onTap: () => onLessonTap(lesson),
+          ),
+          if (lesson.id == current)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 10, 0, 6),
+              child: _LessonExercises(
+                courseId: courseId,
+                module: module,
+                lesson: lesson,
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildLessons(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -416,17 +461,7 @@ class _ModuleCard extends ConsumerWidget {
                     'No lessons yet.',
                     style: TextStyle(color: Color(0xFF748087), fontSize: 13),
                   )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final lesson in lessons)
-                        _LessonRow(
-                          lesson: lesson,
-                          isCurrent: lesson.id == currentLessonId,
-                          onTap: () => onLessonTap(lesson),
-                        ),
-                    ],
-                  ),
+                : _buildLessonList(lessons),
           ),
     );
   }
@@ -488,19 +523,6 @@ class _LessonRow extends StatelessWidget {
               ),
             ),
           ),
-          for (final exercise in lesson.exercises)
-            Padding(
-              padding: const EdgeInsets.only(left: 31, top: 4),
-              child: Text(
-                [
-                  if (exercise.type.isNotEmpty) exercise.type,
-                  if (exercise.question.isNotEmpty) exercise.question,
-                ].join(' · '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
-              ),
-            ),
         ],
       ),
     );
@@ -595,6 +617,9 @@ class _LessonExercises extends ConsumerWidget {
     }
     ref.invalidate(lessonsProvider(module.id));
     ref.invalidate(wordsProvider((courseId: courseId, moduleId: module.id)));
+    ref.invalidate(
+      sentencesProvider((courseId: courseId, moduleId: module.id)),
+    );
   }
 
   @override
@@ -603,13 +628,17 @@ class _LessonExercises extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (lesson.description.isNotEmpty) ...[
+          _PartText(text: lesson.description),
+          const SizedBox(height: 12),
+        ],
         Row(
           children: [
             Expanded(
               child: Text(
-                '${module.title.isEmpty ? 'Untitled module' : module.title}'
-                '  ·  ${lesson.title.isEmpty ? 'Untitled lesson' : lesson.title}'
-                '  ·  ${exercises.length} exercises',
+                exercises.isEmpty
+                    ? 'No exercises in this lesson yet.'
+                    : '${exercises.length} exercises',
                 style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
               ),
             ),
@@ -628,27 +657,14 @@ class _LessonExercises extends ConsumerWidget {
             ),
           ],
         ),
-        if (lesson.description.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _PartText(text: lesson.description),
+        for (final exercise in exercises) ...[
+          const SizedBox(height: 10),
+          _ExerciseCard(
+            exercise: exercise,
+            onEdit: () => _edit(context, ref, exercise),
+            onDelete: () => _delete(context, ref, exercise),
+          ),
         ],
-        const SizedBox(height: 14),
-        Expanded(
-          child: exercises.isEmpty
-              ? const _NoWords('No exercises in this lesson yet.')
-              : ListView.separated(
-                  itemCount: exercises.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final exercise = exercises[index];
-                    return _ExerciseCard(
-                      exercise: exercise,
-                      onEdit: () => _edit(context, ref, exercise),
-                      onDelete: () => _delete(context, ref, exercise),
-                    );
-                  },
-                ),
-        ),
       ],
     );
   }
@@ -761,6 +777,127 @@ class _ExerciseCard extends StatelessWidget {
             icon: const Icon(Icons.delete_outline_rounded, size: 19),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A module's sentences grouped by lesson, marking those used in exercises.
+class _SentenceList extends StatelessWidget {
+  const _SentenceList({
+    required this.moduleTitle,
+    required this.sentences,
+    required this.lessonTitles,
+  });
+
+  final String moduleTitle;
+  final List<Sentence> sentences;
+  final Map<int, String> lessonTitles;
+
+  @override
+  Widget build(BuildContext context) {
+    final used = sentences.where((s) => s.used).length;
+    // Header rows where the lesson changes; sentences arrive in lesson order.
+    final rows = <Widget>[];
+    int? lessonId;
+    for (final (index, sentence) in sentences.indexed) {
+      if (index == 0 || sentence.lessonId != lessonId) {
+        lessonId = sentence.lessonId;
+        rows.add(
+          Padding(
+            padding: EdgeInsets.only(top: index == 0 ? 0 : 16, bottom: 8),
+            child: Text(
+              (lessonTitles[lessonId] ?? 'Other sentences').toUpperCase(),
+              style: const TextStyle(
+                color: Color(0xFF9AA4A6),
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        );
+      }
+      rows.add(_SentenceRow(sentence: sentence));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$moduleTitle  ·  ${sentences.length} sentences, $used used',
+          style: const TextStyle(color: Color(0xFF748087), fontSize: 13),
+        ),
+        const SizedBox(height: 12),
+        Expanded(child: ListView(children: rows)),
+      ],
+    );
+  }
+}
+
+class _SentenceRow extends StatelessWidget {
+  const _SentenceRow({required this.sentence});
+
+  final Sentence sentence;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(
+          color: sentence.used ? const Color(0xFFE3EAE5) : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: sentence.used
+                ? const Color(0xFF2B7771)
+                : const Color(0xFFE4E0D9),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Tooltip(
+              message: sentence.used ? 'Used in an exercise' : 'Not used yet',
+              child: Icon(
+                sentence.used
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 17,
+                color: sentence.used
+                    ? const Color(0xFF2B7771)
+                    : const Color(0xFFB2B9B8),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SelectableText(
+                    sentence.text,
+                    style: const TextStyle(
+                      color: Color(0xFF17252D),
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (sentence.translation.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    SelectableText(
+                      sentence.translation,
+                      style: const TextStyle(
+                        color: Color(0xFF748087),
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

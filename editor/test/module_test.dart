@@ -20,4 +20,20 @@ void main() {
     expect(lesson.exercises.single.type, 'single_choice');
     expect(lesson.exercises.single.question, 'Hola?');
   });
+
+  test('parses a module sentence from the server', () {
+    final sentence = Sentence.fromJson({
+      'sentence_id': 11,
+      'lesson_id': 38,
+      'sentence': 'Il sole è caldo.',
+      'translation': 'The sun is hot.',
+      'used': true,
+    });
+
+    expect(sentence.id, 11);
+    expect(sentence.lessonId, 38);
+    expect(sentence.text, 'Il sole è caldo.');
+    expect(sentence.translation, 'The sun is hot.');
+    expect(sentence.used, isTrue);
+  });
 }

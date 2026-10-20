@@ -1,4 +1,5 @@
 from utils.db import get_query_results, run_query
+from models.sentence import Sentence
 from models.word import (Word, WordTranslationList, WordTranslation)
 
 
@@ -63,3 +64,18 @@ async def update_word(course_id: int, module_id: int, text: str, translation: st
     """
     rows = await get_query_results(query, (translation, deleted, course_id, module_id, text))
     return len(rows)
+
+
+async def module_sentences(course_id: int, module_id: int) -> list[Sentence]:
+    """The module's sentences in part order; used when an exercise in the module asks the sentence."""
+    query = """
+    SELECT s.sentence_id, s.lesson_id, s.sentence, COALESCE(s.translation, '') AS translation,
+        EXISTS (SELECT 1 FROM course.exercise e
+                WHERE e.module_id = s.module_id AND e.question = s.sentence) AS used
+    FROM course.sentences s
+    LEFT JOIN course.lesson l ON l.lesson_id = s.lesson_id
+    WHERE s.course_id = %s AND s.module_id = %s
+    ORDER BY l.weight NULLS LAST, s.lesson_id, s.sentence_id
+    """
+    rows = await get_query_results(query, (course_id, module_id))
+    return [Sentence(**row) for row in rows]

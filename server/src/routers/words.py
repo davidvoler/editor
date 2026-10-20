@@ -1,9 +1,16 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from models.sentence import Sentence
 from models.word import Word
-from utils.words_utils import course_words, update_word
+from utils.words_utils import course_words, module_sentences, update_word
 
 router = APIRouter()
+
+@router.get("/sentences", response_model=list[Sentence])
+async def _get_sentences(course_id: int, module_id: int) -> list[Sentence]:
+    """The module's sentences, such as those extracted from video parts."""
+    return await module_sentences(course_id, module_id)
+
 
 @router.get("/words", response_model=list[Word])
 async def _get_words(course_id: int, module_id: int | None = None) -> list[Word]:
