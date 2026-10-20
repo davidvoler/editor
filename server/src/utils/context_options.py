@@ -60,8 +60,9 @@ async def _video_options(stats: ContextStats) -> list[PromptOption] | None:
     """For a video module: how to split the video, else the next part to extract.
     None when the module has no video."""
     # Imported here: prompt_routers.video imports this module's helpers indirectly.
-    from prompt_routers.video import extract_option, split_options
-    from utils.video_utils import count_parts, get_module_video, next_part_to_extract
+    from prompt_routers.video import extract_options, part_exercise_options, split_options
+    from utils.video_utils import (
+        count_parts, get_module_video, next_part_to_extract, next_part_with_exercise_material)
     c = stats.context
     video = await get_module_video(c.module_id)
     if not video:
@@ -69,8 +70,14 @@ async def _video_options(stats: ContextStats) -> list[PromptOption] | None:
     parts, _ = await count_parts(c.module_id)
     if not parts:
         return split_options(c.course_id, c.module_id, video[1])
+    options = []
+    material = await next_part_with_exercise_material(c.module_id)
+    if material:
+        options += part_exercise_options(c.course_id, c.module_id, *material)
     part = await next_part_to_extract(c.module_id)
-    return [extract_option(c.course_id, c.module_id, part.title)] if part else []
+    if part:
+        options += extract_options(c.course_id, c.module_id, part.title)
+    return options
 
 
 async def context_options(course_id: int) -> list[PromptOption]:
@@ -95,8 +102,9 @@ async def context_options(course_id: int) -> list[PromptOption]:
             stats, "Create the next lesson", PromptRouterType.LESSON, PromptType.LESSON_CREATE,
             f"The lesson has {stats.lesson_exercises} exercises."))
     # Alternatives, each naming its own unused words; the option carries them in prompt_values.
+    # A video module makes its exercises from its parts instead.
     size = min(EXERCISES_PER_REQUEST, MAX_EXERCISES_PER_LESSON - stats.lesson_exercises)
-    if size > 0:
+    if size > 0 and not is_video:
         for start in range(0, min(unused, size * EXERCISE_OPTIONS), size):
             words = stats.unused_words[start:start + size]
             option = _option(

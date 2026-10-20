@@ -51,7 +51,12 @@
     - [v] extract parts 
         > Q: What are "parts" here? Decision: cleaned-up sentences with translations (up to 10 per part), saved to course.sentences with the part's lesson_id, in the same AI call as the words.
 - [v] generate exercises 
-    > Q: New flow for video? Decision: reuse "Create exercises for N unused words"; extracting a part makes it the current lesson, so its exercises go into that part. Video modules never get "next lesson"/"next module" options.
+    > Q: New flow for video? Decision (per David): exercises come from each part's extracted words and sentences, offered for the first part that still has some without exercises. All are single choice: the question is the word or sentence, the options are translations (the correct one + 3 wrong), saved in the part's lesson, which becomes current.
+        - "Create word exercises for Part N": no AI; wrong options are random translations of the module's other words.
+        - "Create sentence exercises for Part N": no AI; wrong options are random translations of the module's other sentences.
+        - "... with AI wrong translations": one AI call writes 3 wrong translations per sentence that look alike but change the meaning.
+        - "Extract words and sentences from Part N and create exercises" (per David: in one go): extraction, then word and sentence exercises with random wrong options. Q: AI wrong options for the sentences here? Decision: no, random, so the step stays a single AI call (~3 min).
+    > Q: Lesson size limit for parts? Decision: none; a part holds all its exercises. Video modules don't get the generic AI "Create single choice exercises for: ..." options or "next lesson"/"next module".
 - [v] select words and translations 
     > Q: How? Decision: tap a word in the Words tab to edit its translation or remove it (PUT /words/word, soft delete). Removed words are not suggested again.
     > Note: extracting a part took ~3.5 min on muse-glimmer, so the chat now waits up to 10 minutes for a reply.

@@ -44,6 +44,10 @@ class PromptType(Enum):
     VIDEO_PARTS = "video_parts"
     VIDEO_MODULE = "video_module"  # start a module from a video URL
     VIDEO_EXTRACT = "video_extract"  # extract words and sentences from the next part
+    VIDEO_EXTRACT_AND_EXERCISES = "video_extract_and_exercises"  # the same, then exercises from them
+    VIDEO_WORD_EXERCISES = "video_word_exercises"  # a part's words -> single choice, no AI
+    VIDEO_SENTENCE_EXERCISES = "video_sentence_exercises"  # a part's sentences -> single choice, random wrong options
+    VIDEO_SENTENCE_EXERCISES_AI = "video_sentence_exercises_ai"  # the same, with AI-written wrong options
     VOCABULARY_SUGGEST_WORDS = "vocabulary_suggest_words"
 
 

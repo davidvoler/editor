@@ -1,4 +1,5 @@
 import json
+import random
 import math
 
 import httpx
@@ -136,3 +137,68 @@ async def save_sentences(lang: str, course_id: int, module_id: int, lesson_id: i
             VALUES (%s, %s, %s, %s, %s, %s)""",
             (lang, course_id, module_id, lesson_id, sentence[:355], translation),
         )
+
+
+# Wrong options in exercises made from a part's words and sentences.
+PART_WRONG_OPTIONS = 3
+
+
+async def part_words_without_exercises(lesson_id: int, module_id: int) -> list[tuple[str, str]]:
+    """(word, translation) for the part's extracted words that no exercise uses yet."""
+    rows = await get_query_results(
+        """SELECT w.word, min(w.translation) AS translation
+        FROM course.lesson l
+        JOIN course.words w ON w.module_id = l.module_id AND w.word = ANY(l.words)
+        WHERE l.lesson_id = %s AND w.module_id = %s AND w.deleted IS NOT TRUE
+          AND COALESCE(w.translation, '') <> ''
+        GROUP BY w.word
+        HAVING NOT bool_or(COALESCE(w.used, false))
+        ORDER BY min(w.word_id)""",
+        (lesson_id, module_id),
+    )
+    return [(r["word"], r["translation"]) for r in rows]
+
+
+async def part_sentences_without_exercises(lesson_id: int, module_id: int) -> list[tuple[str, str]]:
+    """(sentence, translation) for the part's sentences that are not an exercise question yet."""
+    rows = await get_query_results(
+        """SELECT s.sentence, s.translation FROM course.sentences s
+        WHERE s.lesson_id = %s AND COALESCE(s.translation, '') <> ''
+          AND NOT EXISTS (SELECT 1 FROM course.exercise e
+                          WHERE e.module_id = %s AND e.question = s.sentence)
+        ORDER BY s.sentence_id""",
+        (lesson_id, module_id),
+    )
+    return [(r["sentence"], r["translation"]) for r in rows]
+
+
+async def next_part_with_exercise_material(module_id: int) -> tuple[Lesson, list, list] | None:
+    """The first extracted part that still has words or sentences without exercises,
+    with those words and sentences."""
+    rows = await get_query_results(
+        """SELECT lesson_id, course_id, module_id, title, description, deleted, weight
+        FROM course.lesson WHERE module_id = %s AND words IS NOT NULL
+        ORDER BY weight, lesson_id""",
+        (module_id,),
+    )
+    for row in rows:
+        words = await part_words_without_exercises(row["lesson_id"], module_id)
+        sentences = await part_sentences_without_exercises(row["lesson_id"], module_id)
+        if words or sentences:
+            return Lesson(**row), words, sentences
+    return None
+
+
+async def module_translations(module_id: int, sentences: bool) -> list[str]:
+    """Translations of the module's words, or of its sentences, to draw wrong options from."""
+    sql = ("SELECT DISTINCT translation FROM course.sentences WHERE module_id = %s"
+           if sentences else
+           "SELECT DISTINCT translation FROM course.words WHERE module_id = %s AND deleted IS NOT TRUE")
+    rows = await get_query_results(sql, (module_id,))
+    return [r["translation"] for r in rows if (r["translation"] or "").strip()]
+
+
+def random_wrong_options(answer: str, pool: list[str], count: int = PART_WRONG_OPTIONS) -> list[str]:
+    """count different translations from pool, none equal to the answer."""
+    candidates = list({t.strip() for t in pool if t.strip().lower() != answer.strip().lower()})
+    return random.sample(candidates, min(count, len(candidates)))

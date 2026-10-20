@@ -91,3 +91,33 @@ async def get_single_choice_for_words(
         f"tense or negation), so only a learner who understands the {lang} sentence picks the right one."
     )
     return result.output
+
+
+class SentenceWrongTranslations(BaseModel):
+    number: int = Field(description="The number of the sentence in the given list.")
+    incorrect_translations: list[str] = Field(description="Wrong translations of that sentence.")
+
+class SentenceWrongTranslationsList(BaseModel):
+    sentences: list[SentenceWrongTranslations] = Field(description="One entry per given sentence.")
+
+async def get_wrong_translations(
+    sentences: list[tuple[str, str]],
+    lang: str,
+    to_lang: str,
+    count: int = 3,
+    provider: str = "ollama",
+    model: str = "llama3.1") -> dict[int, list[str]]:
+    """Wrong translations for each (sentence, correct translation), by the sentence's
+    position in the list: alike in form, different in meaning."""
+    listing = "\n".join(f"{i}. {s} => {t}" for i, (s, t) in enumerate(sentences, start=1))
+    agent = Agent(
+        get_ai_model(provider, model),
+        output_type=SentenceWrongTranslationsList,
+        system_prompt=f"You are an expert {lang} language teacher writing single-choice exercises for students who speak {to_lang}.",
+    )
+    result = await agent.run(
+        f"Each line is a numbered {lang} sentence and its correct {to_lang} translation:\n{listing}\n\n"
+        f"For each sentence, write {count} wrong {to_lang} translations. Each must read naturally and look like "
+        f"the correct one, but change the meaning (for example a different word, person, tense or negation)."
+    )
+    return {s.number: s.incorrect_translations[:count] for s in result.output.sentences}
