@@ -96,7 +96,7 @@ I am considering embedding lessons inside modules
 adding a new pane 
 - sentences 
 Do we need to show the video? maybe it is not a bad idea = but were will we see it?
-- [] add video preview 
+- [v] add video preview 
 
 
 ## Feature Pack 5 - Preview lesson
@@ -104,6 +104,18 @@ Do we need to show the video? maybe it is not a bad idea = but were will we see 
     - [] Full course preview in a different page/window
     - [] Per module preview pane
     - [] Per lesson preview pane
+
+
+
+## Feature pack 6 - Full course preview 
+
+- [] Create a full course preview 
+- [] Optional create a button with preview as modal for lesson.
+
+## Feature pack 7 - Improve prompts 
+- [] sentences are too long 
+- [] we need smaller speech parts 
+- [] We need more words in a video
 
 
 
