@@ -3,8 +3,6 @@
 This project is an editor for language course 
 I have decided replace a single server for student, school management and editor
 
-
-
 ### Editor/UI
 I am re-designing the editor UI 
 - Simpler 
@@ -213,6 +211,23 @@ Q. How should we show the debug options
 a. in the same chat window when debug options is selected
 b. in a separated window
 
+Q. Do we need a context - or are we saving the entire data in the module/course
+a. we could have a prompt history - and get the last prompt 
+b. we can save as much data as we can in the course/module
+c. consider consulting AI
+
+Q. Maybe it is better to always return Task ID and reload - never return data from a request   
+a. The logic is simpler 
+    - request - prompt or options 
+    - task id - a task id 
+    - get status - status should also include what has change and what need to be reloaded - stop spinner
+    - reload - reload the data 
+b. You do not have edge cases where data is returned directly - but it is partial 
+
+
+
+
+
 ##### Example Discussion ####
 
 p: create a French course
@@ -268,4 +283,93 @@ p: yes,  please create a module with some greeting words
                           └──────────────────────────┘
 
 
-                          
+
+
+
+### Tasks & Taskiq
+The way we work with tasks
+I can see 2 options 
+1. The tasks itself is saving results to the db - so even if the use closed the page - the next time we open the chat window the results is there 
+2. pass full data back in the results - if not polled the results are lost
+3. do both 
+    a. save to DB by the task
+    b. pass full data in the task so we do not need to read from the DB
+
+```python
+#option 1
+@broker.task 
+async def prompt_request(req):
+    response = get_response(req)
+    response_id = save_response(response)
+    return TaskResponse(response_id=response_id)
+
+async def get_task_Status(task_id):
+    res = await broker.result_backend.get_result(task.task_id)
+    response_id = res.results.response_id
+    return load_response(response_id)
+
+
+
+#option 3 
+@broker.task 
+async def prompt_request(req):
+    response = get_response(req)
+    #do not wait for db - return the response to be fast
+    asyncio.run(save_response(response))
+    return response
+
+
+async def get_task_Status(task_id):
+    #results of type 
+    results = await broker.result_backend.get_result(task.task_id)
+    return results.results
+
+```
+We choose option 3 
+- it is faster 
+    - no need to read from DB 
+    - no need to wait even for writing to DB
+
+- It retains the data even if polling failed or page closed 
+
+
+### The full cycle - architecture
+
+- When page is loaded
+[Client] Request chat history
+[Server] Load chat history from DB
+[Client] Display chat history
+- When user start prompting
+[Client] send prompt
+[Server] starts a task - return Task response request
+[Client] poll for results 
+[Task] Get response  
+[Task] Save  to db
+[Task] Return results to results backend 
+[Client] Read Results
+[Client] Stop spinner
+[Client] Show results in chat window 
+[Client] Reload course/module data
+
+
+### Auth simplified
+- a new user for each school - if a user is member of multiple schools he simply has a new user record,permission for each school
+
+tables:
+user [user_id,school, permission, lang, to_lang]
+preferences [user_id,lang,to_lang] - this is needed for learning
+We could add preferences as a list into the user record
+
+
+Later we could think of school record and configurations there
+
+Pros 
+- simplicity
+- A single use to read from the database
+- User contains permission and maybe also preferences 
+Cons
+- The auth code was complicated - rewriting will be time consuming
+
+
+
+## Next steps

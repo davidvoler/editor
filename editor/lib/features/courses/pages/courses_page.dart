@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/navigation_rail_panel.dart';
 import '../data/course.dart';
+import '../data/courses_repository.dart';
 import '../widgets/create_course_dialog.dart';
 import 'course_authoring_page.dart';
 
@@ -54,13 +56,14 @@ class _CoursesPageState extends State<CoursesPage> {
   }
 }
 
-class CoursesContent extends StatelessWidget {
+class CoursesContent extends ConsumerWidget {
   const CoursesContent({required this.onAddCourse, super.key});
 
   final VoidCallback onAddCourse;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final courses = ref.watch(coursesProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -128,8 +131,8 @@ class CoursesContent extends StatelessWidget {
                 color: const Color(0xFFE3EAE5),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                '4',
+              child: Text(
+                '${courses.value?.length ?? '–'}',
                 style: TextStyle(
                   color: Color(0xFF2B7771),
                   fontSize: 12,
@@ -147,29 +150,104 @@ class CoursesContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final columns = constraints.maxWidth > 1050
-                ? 3
-                : constraints.maxWidth > 650
-                ? 2
-                : 1;
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: sampleCourses.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
-                crossAxisSpacing: 18,
-                mainAxisSpacing: 18,
-                childAspectRatio: 1.45,
-              ),
-              itemBuilder: (_, index) =>
-                  CourseCard(course: sampleCourses[index]),
-            );
-          },
+        courses.when(
+          data: (courses) => courses.isEmpty
+              ? const _CoursesMessage(
+                  icon: Icons.menu_book_outlined,
+                  message: 'No courses yet. Add one to get started.',
+                )
+              : CourseGrid(courses: courses),
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 64),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => _CoursesMessage(
+            icon: Icons.cloud_off_rounded,
+            message: 'Could not load courses from the server.',
+            detail: '$error',
+            onRetry: () => ref.invalidate(coursesProvider),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class CourseGrid extends StatelessWidget {
+  const CourseGrid({required this.courses, super.key});
+
+  final List<Course> courses;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth > 1050
+            ? 3
+            : constraints.maxWidth > 650
+            ? 2
+            : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: courses.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 18,
+            mainAxisSpacing: 18,
+            childAspectRatio: 1.45,
+          ),
+          itemBuilder: (_, index) => CourseCard(course: courses[index]),
+        );
+      },
+    );
+  }
+}
+
+class _CoursesMessage extends StatelessWidget {
+  const _CoursesMessage({
+    required this.icon,
+    required this.message,
+    this.detail,
+    this.onRetry,
+  });
+
+  final IconData icon;
+  final String message;
+  final String? detail;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 64),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: const Color(0xFF8A979A)),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFF42535A),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (detail != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                detail!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF8A979A), fontSize: 12),
+              ),
+            ],
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

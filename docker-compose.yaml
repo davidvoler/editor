@@ -1,10 +1,24 @@
-
+x-server-env: &server-env
+  - POSTGRES_DB=polyglots
+  - POSTGRES_PORT=5432
+  - POSTGRES_HOST=postgres
+  - POSTGRES_USER=polyglots
+  - POSTGRES_PASSWORD=polyglots
+  - POSTGRES_CONTENT_PASSWORD=polyglots
+  - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+  - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+  - AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID:-}
+  - ENABLE_DOCS=true
+  - COOKIE_SECURE=false
+  - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+  - REDIS_HOST=redis
+  - REDIS_PORT=6379
 services:
   postgres:
     container_name: postgres
     image: postgres:17.4
     ports:
-      - 5432:5432
+      - 5434:5432
     environment:
       POSTGRES_USER: polyglots
       POSTGRES_PASSWORD: polyglots
@@ -14,19 +28,17 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     shm_size: 4GB
 
-  server:
-    container_name: server
-    image: server:polyglots
+  editor:
+    container_name: editor
+    image: editor:polyglots
     build:
       context: server
       dockerfile: Dockerfile.dev
     ports:
-      - 8006:8004
+      - 8006:8006
     volumes:
-      - ./server/src:/app
-      # pytest suite (server/tests) — run with:
-      #   docker compose exec -w /app/tests server python -m pytest -q
-      - ./server/tests:/app/tests
+      - ./server:${PWD}/server
+    working_dir: ${PWD}/server/src
     environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -49,21 +61,23 @@ services:
       - 6379:6379
 
 
-  broker:
-    container_name: broker
-    image: server:polyglots
+  broker-editor:
+    container_name: broker-editor
+    image: editor:polyglots
     command:
       - taskiq
       - worker
-      - tasks.broker:broker
+      - task_runner:broker
       # task modules to import so their @broker.task fns register on the worker
-      - routers.generate_poc_task
+      - tasks.prompt_tasks
       - -fsd
       - --log-level 
       - INFO
       - --reload
+    
     volumes:
-      - ./server/src:/app
+      - ./server:${PWD}/server
+    working_dir: ${PWD}/server/src
     environment: *server-env
     extra_hosts:
       - "host.docker.internal:host-gateway"

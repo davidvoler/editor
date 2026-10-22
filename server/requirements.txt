@@ -27,3 +27,7 @@ pydantic-ai
 pytest
 pytest-asyncio
 fastapi
+babel
+openai
+pydantic-ai-harness
+

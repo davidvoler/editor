@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
-from server.src.models.prompts import PromptContext
-from models.context import ContextRequest
+from models.context import PromptsContext
+from utils.context_utils import get_or_create_context, save_context
+
 router = APIRouter()
 
-@router.post("/context", response_model=PromptContext)
-async def handle_context(request: ContextRequest):
-    # Implement the logic to handle the context request here
-    # For now, just raise an HTTPException to indicate it's not implemented
-    raise HTTPException(status_code=501, detail="Not implemented")
+@router.post("/get_or_create", response_model=PromptsContext)
+async def _get_or_create_context(context:PromptsContext)->PromptsContext:
+   return await get_or_create_context(course_id=context.course_id, module_id=context.module_id, lesson_id=context.lesson_id)
+
+@router.post("/save", response_model=PromptsContext)
+async def _save_context(context:PromptsContext)->PromptsContext:
+   return await save_context(context)
